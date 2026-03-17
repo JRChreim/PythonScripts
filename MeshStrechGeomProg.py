@@ -43,15 +43,15 @@ y = np.array([0.0, 1.0]) * RL
 
 # number of elements
 # total
-N = np.array([880, 111])          # [Nx, Ny]
+N = np.array([18110, 111])          # [Nx, Ny]
 # refined region
-Nref = np.array([800, 11])        # refined elements
+Nref = np.array([18000, 11])        # refined elements
 
 # droplet diameter
 D0 = RL / 10
 
 # droplet center location relative to the center of the domain
-Drc = np.array([-0.5, 0.0]) * RL
+Drc = np.array([-0.2, -0.04]) * RL
 
 # ------------------
 # calculations
@@ -180,12 +180,12 @@ MX, MY = np.meshgrid(*coords_uniform)
 MXS, MYS = np.meshgrid(*coords_stretched)
 
 # toggle plots
-PF = False
+PF = True
 
 if PF:   
     ## plots ##
     # figures and axes
-    fig, axes = plt.subplots(3, 1)
+    fig, axes = plt.subplots(2, 1)
 
     # ------------------
     # Uniform mesh
@@ -203,6 +203,7 @@ if PF:
     # ------------------
     # Stretched mesh
     # ------------------
+
     axes[1].plot(MXS, MYS, 'b-', linewidth=0.2)
     axes[1].plot(MXS.T, MYS.T, 'b-', linewidth=0.2)
 
@@ -216,9 +217,9 @@ if PF:
     # ------------------
     # BOTH meshes
     # ------------------
-    axes[2].plot(MX, MY, 'k-', linewidth=1.0)
-    axes[2].plot(MXS, MYS, 'r-', linewidth=0.2)
-    axes[2].set_aspect('equal')
+    # axes[2].plot(MX, MY, 'k-', linewidth=1.0)
+    # axes[2].plot(MXS, MYS, 'r-', linewidth=0.2)
+    # axes[2].set_aspect('equal')
         
     plt.tight_layout()
     plt.show()
