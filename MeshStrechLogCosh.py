@@ -35,6 +35,16 @@ def boundary_system(X, lower, upper, a, b, alpha):
     return [eq1, eq2]
 
 # -------------------------------------------------
+# OUTPUTTING DIAGNOSTIGS FOR THE MESH
+# -------------------------------------------------
+def print_mesh_stats(deltas, RL, labels=('x','y')):
+    for d, label in enumerate(labels):
+        dabs = np.abs(deltas[d])
+        print(f"{label}: max Δ/RL={np.max(dabs)/RL:.3e}, "
+              f"min Δ/RL={np.min(dabs)/RL:.3e}, "
+              f"ratio={np.max(dabs)/np.min(dabs):.3e}")
+
+# -------------------------------------------------
 # INPUT PARAMETERS
 # -------------------------------------------------
 # REFERENCE LENGTH
@@ -53,7 +63,7 @@ L = upper - lower
 center = np.array([0.0,  0.0])
 
 # number of elements
-Nex = 1200
+Nex = 1800
 N = np.array([Nex,round(Nex * L[1] / L[0])], dtype=int)
 
 # number of boundary points
@@ -67,7 +77,7 @@ a = np.array([-0.6*RL, 0.0*RL])
 b = np.array([0.6*RL, 0.6*RL])
 
 # stretching smoothness
-alpha = np.array([1e1, 1e0])
+alpha = np.array([20.0e0, 1.3e0])
 
 # -------------------------------------------------
 # MESH GENERATION
@@ -120,21 +130,19 @@ MXS, MYS = np.meshgrid(
 # -------------------------------------------------
 # DIAGNOSTICS
 # -------------------------------------------------
-dx = np.diff(coords_stretched[0])
-dy = np.diff(coords_stretched[1])
+dS = [np.diff(c) for c in coords_stretched]
 
 print("difference between desired and obtained boundaries")
-print("beginning:", abs(lower[0] - coords_stretched[0][0]))
-print("end:", abs(upper[0] - coords_stretched[0][-1]))
+print("beginning:", np.abs(lower - np.array([c[0] for c in coords_stretched])))
+print("end:", np.abs(upper - np.array([c[-1] for c in coords_stretched])))
 
-print("min Δx / RL:", np.min(np.abs(dx)) / RL)
-print("min Δy / RL:", np.min(np.abs(dy)) / RL)
-
+print_mesh_stats(dS, RL)
+    
 # number of elements inside reference length
 nOE = np.sum(
-    (coords_stretched[0]/RL >= -1) &
-    (coords_stretched[0]/RL <= 1)
-)
+    (center[0] - D0/2 <= coords_stretched[0]) &
+    (coords_stretched[0] <= center[0] + D0/2)
+) - 1
 
 print("elements inside RL:", nOE)
 
@@ -144,20 +152,17 @@ print("elements inside RL:", nOE)
 print("\nInput the following on your file:")
 
 print("Nx,Ny", N)
+print("ax, ay:", alpha)
 
-print("x_i/RL:", coords_aux[0][0] / RL)
-print("x_f/RL:", coords_aux[0][-1] / RL)
-print("y_i/RL:", coords_aux[1][0] / RL)
-print("y_f/RL:", coords_aux[1][-1] / RL)
+bounds_if = np.array([
+    [coords_aux[d][0], coords_aux[d][-1]]
+    for d in range(2)
+])
 
-print("x_a/RL:", a[0] / RL)
-print("x_b/RL:", b[0] / RL)
+bounds_ab = np.column_stack((a, b))
 
-print("y_a/RL:", a[1] / RL)
-print("y_b/RL:", b[1] / RL)
-
-print("ax:", alpha[0])
-print("ay:", alpha[1])
+print("[x,y]_[i,f]/RL:\n", bounds_if / RL)
+print("[x,y]_[a,b]/RL:\n", bounds_ab / RL)
 
 # -------------------------------------------------
 # PLOT MESH
@@ -168,34 +173,57 @@ PF = True
 if PF:
     ## plots ##
     # figures and axes
-    fig, axes = plt.subplots(2, 1)
+    fig, axes = plt.subplots(2, 2)
 
     # ------------------
     # Uniform mesh
     # ------------------
-    axes[0].plot(MX / RL, MY / RL, 'k-', linewidth=0.2)
-    axes[0].plot(MX.T / RL, MY.T / RL, 'k-', linewidth=0.2)
+    axes[0][0].plot(MX / RL, MY / RL, 'k-', linewidth=0.2)
+    axes[0][0].plot(MX.T / RL, MY.T / RL, 'k-', linewidth=0.2)
 
-    axes[0].add_patch(plt.Circle((center[0] / RL, center[1] / RL), D0 / ( 2* RL ),
+    axes[0][0].add_patch(plt.Circle((center[0] / RL, center[1] / RL), D0 / ( 2* RL ),
                     fill=False, linewidth=2))
 
-    axes[0].set_xlabel("x/R_L []")
-    axes[0].set_ylabel("y/R_L []")
-    axes[0].set_title("Auxiliary Uniform")
-    axes[0].set_aspect('equal')
+    axes[0][0].set_xlabel("x/R_L []")
+    axes[0][0].set_ylabel("y/R_L []")
+    axes[0][0].set_title("Auxiliary Uniform")
+    axes[0][0].set_aspect('equal')
+
+    axes[0][1].plot(MX, MY, 'k-', linewidth=0.2)
+    axes[0][1].plot(MX.T, MY.T, 'k-', linewidth=0.2)
+
+    axes[0][1].add_patch(plt.Circle((center[0], center[1]), D0 / ( 2 ),
+                    fill=False, linewidth=2))
+
+    axes[0][1].set_xlabel("x [m]")
+    axes[0][1].set_ylabel("y [m]")
+    axes[0][1].set_title("Auxiliary Uniform")
+    axes[0][1].set_aspect('equal')
+
 
     # ------------------
     # Stretched mesh
     # ------------------
-    axes[1].plot(MXS / RL, MYS / RL, 'b-', linewidth=0.2)
-    axes[1].plot(MXS.T / RL, MYS.T / RL, 'b-', linewidth=0.2)
+    axes[1][0].plot(MXS / RL, MYS / RL, 'b-', linewidth=0.2)
+    axes[1][0].plot(MXS.T / RL, MYS.T / RL, 'b-', linewidth=0.2)
 
-    axes[1].add_patch(plt.Circle((center[0] / RL, center[1] / RL ) , D0 / ( 2 * RL ),
+    axes[1][0].add_patch(plt.Circle((center[0] / RL, center[1] / RL ) , D0 / ( 2 * RL ),
                     fill=False, linewidth=2))
 
-    axes[1].set_xlabel("x/R_L []")
-    axes[1].set_ylabel("y/R_L []")
-    axes[1].set_title("Stretched")
-    axes[1].set_aspect('equal')        
+    axes[1][0].set_xlabel("x/R_L []")
+    axes[1][0].set_ylabel("y/R_L []")
+    axes[1][0].set_title("Stretched")
+    axes[1][0].set_aspect('equal')        
+    
+    axes[1][1].plot(MXS, MYS, 'b-', linewidth=0.2)
+    axes[1][1].plot(MXS.T, MYS.T, 'b-', linewidth=0.2)
+
+    axes[1][1].add_patch(plt.Circle((center[0], center[1]) , D0 / ( 2 ),
+                    fill=False, linewidth=2))
+
+    axes[1][1].set_xlabel("x [m]")
+    axes[1][1].set_ylabel("y [m]")
+    axes[1][1].set_title("Stretched")
+    axes[1][1].set_aspect('equal')        
    
     plt.show()
