@@ -15,7 +15,7 @@ def grad_p_alpha(alpha, b, c, E, Q):
     # grad wrt alpha
     return (-b * D - N * c) / (D*D)
 
-def grad_ascent_softmax(b, c, E, Q, z0=None, lr=1e-2, maxit=5000, tol=1e-9):
+def grad_ascent_softmax(b, c, E, Q, z0=None, lr=1e-2, maxit=5000, tol=1e-12):
     n = len(b)
     if z0 is None:
         z = np.zeros(n)
@@ -39,7 +39,6 @@ def grad_ascent_softmax(b, c, E, Q, z0=None, lr=1e-2, maxit=5000, tol=1e-9):
 # --------------------------
 # Example usage
 
-
 # pi infty
 pi = np.array([1.0E09, 0.0E0])
 # qv
@@ -54,10 +53,10 @@ cp = np.array([4267, 1006])
 gama = cp / cv
 
 # PRESSURES - Pa
-p0 = np.array([[1E+05], [5]])
+p0 = np.array([[101325*10], [5]])
 
 # TEMPERATURES - K
-T0 = np.array( [[498.15], [298.15]] )
+T0 = np.array( [[298.15], [298.15]] )
 
 # density matrix
 rho0 = ( p0 + pi ) / ( ( gama - 1.0 ) * cv * T0 )
@@ -65,23 +64,20 @@ rho0 = ( p0 + pi ) / ( ( gama - 1.0 ) * cv * T0 )
 e0 = cv * T0 + pi / rho0 + qv
 
 # volume fraction matrix
-alp_eps = 1.0E-02
-alp = np.array( [[1.0E0 - 1 * alp_eps, 1 * alp_eps],
-                 [1 * alp_eps, 1.0E0 - 1 * alp_eps] ] )
+alp_eps = 1.0E-05
+alp = np.array([[1.0E0 - 1 * alp_eps, 1 * alp_eps],
+                [1 * alp_eps, 1.0E0 - 1 * alp_eps]])
 
-Pi = gama * pi / ( gama - 1.0 )
-Gam = 1 / (gama - 1.0)
+Pi = alp[0,:] * gama * pi / (gama - 1.0)
+Gam = alp[0,:] / (gama - 1.0)
 
 Q = sum(alp[0,:] * rho0[0,:] * qv)
 E = sum(alp[0,:] * rho0[0,:] * e0[0,:])
 
-# print(E,Q)
-
 p_star, alpha_star, hist = grad_ascent_softmax(Pi, Gam, E, Q)
 print("Optimal p* =", p_star)
 print("Optimal alpha* =", alpha_star)
-print("Iterations:")
-# for h in hist:
-#     print(h)
+for h in hist:
+    print(h)
 
-# print( sum(alpha_star) )
+print( sum(alpha_star) )
