@@ -18,31 +18,31 @@ np.seterr(divide='ignore', invalid='ignore')
 # pi infty
 pi = np.array([1.00E9, 0.0E0])
 # qv
-qv = np.array([-1167E3, 0.0E0])
+qv = np.array([0.0E0, 0.0E0])
 # qv'
 qvp = np.array([0.0E0, 0.0E0])
 # cv
-cv = np.array([1816, 717.5])
+cv = np.array([1000, 717.46])
 # cp
-cp = np.array([4267, 1006])
+cp = np.array([2.35 * cv[0], 1.4 * cv[1]])
 # gamma
 gama = cp / cv
 
 # Reference Length
-RL = 30E-06
+RL = 10E-04
 
 # State Variables - 1 FOR ENVIRONMENT WATER, 2 PRESSURIZED BUBBLE
 # PRESSURES - Pa
-p0 = np.array([[5E6], [3550]])
+p0 = np.array([[1.5E6], [1.0E3]])
 
 # TEMPERATURES - K
-T0 = np.array( [[298.15], [298.15]] )
+T0 = np.array( [[300], [300]] )
 
 # density matrix
 rho0 = ( p0 + pi ) / ( ( gama - 1.0 ) * cv * T0 )
 
 # volume fraction matrix
-alp_eps = 1.0E-05
+alp_eps = 0.0E-05
 
 alp = np.array( [[1.0E0 - 1 * alp_eps, 1 * alp_eps],
                  [1 * alp_eps, 1.0E0 - 1 * alp_eps]] )
@@ -52,11 +52,9 @@ vel = np.array( [[0.0E0, 0.0E0, 0.0E0],
                  [0.0E0, 0.0E0, 0.0E0],
                  [0.0E0, 0.0E0, 0.0E0]] )
 
-
 # domain and patch boundaries - for patch k, that will be [[X_{k,i}, X_{k,f}], [X_{k+1,i}, X_{k+1,f}]
-X = np.array( [ [ [0.0, 0.0, 0.0], [3*RL, 0.0, 0.0] ],
-                [ [0.0, 0.0, 0.0], [0.25*RL, 0.0, 0.0] ], ] )
-
+X = np.array( [ [ [0.0, 0.0, 0.0], [3.0*RL, 0.0, 0.0] ],
+                [ [0.0, 0.0, 0.0], [1.5*RL, 0.0, 0.0] ], ] )
 
 # Patch Centroids
 PC = X.mean(axis=1)
@@ -77,16 +75,17 @@ cfl = 0.50 / 10
 
 # discretization parameters for the [x,y,z] directions, respectively. Rows represent beginning and end, respectively
 # number of elements
-N = np.array([2000, 0, 0])
+N = np.array([3000, 0, 0])
 
 # typical cell size, d[x,y,z]
 dS = PL[0,:] / N
 
 # time step
-dt = cfl * dS[0] / ss
+dt = 1E-9
+# dt = cfl * dS[0] / ss
 
 # save frequency = SF + 1 (because the initial state, 0.dat, is also saved)
-SF = 200
+SF = 1000
 
 # making Nt divisible by SF
 tendA = 1 * PL[1,0] / ss # s
@@ -95,13 +94,18 @@ tendA = 1 * PL[1,0] / ss # s
 NtA = int( tendA//dt + 1 )
 
 # Array of saves. it is the same as Nt/Sf = t_step_save
-AS = int( NtA // SF + 1 )
+# AS = int( NtA // SF + 1 )
 
 # Nt = total number of steps. Ensure Nt > NtA (so the total tendA is covered)
-Nt = AS * SF
+# Nt = AS * SF
 
 # Total physical time
-tend = Nt * dt
+# tend = Nt * dt
+tend = 1E-06 # s
+
+Nt = 1000
+
+AS = 1
 
 # Configuring case dictionary ==================================================
 print(
@@ -131,16 +135,15 @@ print(
     'under_relax'   : 8.0E-1,
     'palpha_eps'    : 1.0E-08,
     'ptgalpha_eps'  : 1.0E-04,
-    'time_stepper'  : 3,
+    'time_stepper'  : 1,
     'recon_type'    : 2,
-    'muscl_order'   : 2,
-    'muscl_lim'     : 4,
+    'muscl_order'   : 1,
     'int_comp'      : 'T',
     'riemann_solver': 2,
-    'wave_speeds'  : 1,
-    'avg_state'    : 2,
-    'bc_x%beg'     : -2,
-    'bc_x%end'     : -6,
+    'wave_speeds'   : 1,
+    'avg_state'     : 2,
+    'bc_x%beg'      : -8, ## check if those are appropriate BC
+    'bc_x%end'      : -7,
     # ==========================================================
     # Formatted Database Files Structure Parameters ============
     'format'       : 2,
@@ -176,12 +179,12 @@ print(
     'fluid_pp(1)%gamma'            : 1.0E+00 / ( gama[0] - 1 ),       
     'fluid_pp(1)%pi_inf'           : gama[0] * pi[0] / ( gama[0] - 1 ),  
     'fluid_pp(1)%cv'          	   : cv[0],          
-    'fluid_pp(1)%qv'        	     : qv[0],	
+    'fluid_pp(1)%qv'        	   : qv[0],	
     'fluid_pp(1)%qvp'          	   : qvp[0],         
     'fluid_pp(2)%gamma'            : 1.0E+00 / ( gama[1] - 1 ),       
     'fluid_pp(2)%pi_inf'           : gama[1] * pi[1] / ( gama[1] - 1 ),  
     'fluid_pp(2)%cv'          	   : cv[1],          
-    'fluid_pp(2)%qv'        	     : qv[1],  	
+    'fluid_pp(2)%qv'        	   : qv[1],  	
     'fluid_pp(2)%qvp'          	   : qvp[1],			
     # ==========================================================
 }, default=convert, indent=2))
