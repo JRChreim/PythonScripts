@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "python-scripts"
+version = "0.1.0"
+description = "Research-oriented Python scripts for mesh generation and post-processing"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "matplotlib",
+    "numpy",
+    "scipy",
+]
+
+[project.scripts]
+ecogen-bd-analysis = "scripts.ecogen_bd_analysis:main"
+mfc-bd-analysis = "scripts.mfc_bd_analysis:main"
+geom-progression = "scripts.geom_progression:main"
+mesh-stretch-geom-prog = "scripts.mesh_stretch_geom_prog:main"
+mesh-stretch-log-cosh = "scripts.mesh_stretch_log_cosh:main"
+p-relaxation = "scripts.p_relaxation:main"
+ecogen-out-summary = "scripts.ecogen_out_summary:main"
+plot-ecogen-out = "scripts.plot_ecogen_out:main"
+ecogen-quicklook = "scripts.ecogen_quicklook:main"
+gestfin-expenses = "scripts.gestfin_expenses:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["scripts*", "src*"]
