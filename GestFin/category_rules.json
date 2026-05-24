@@ -1,0 +1,435 @@
+{
+  "version": 1,
+  "notes": "Edit rules in uppercase without accents. The parser normalizes the PDF text before matching. Rules are evaluated from highest priority to lowest.",
+  "categories": [
+    "Receitas",
+    "Transferencias internas",
+    "Pessoas e terceiros",
+    "Impostos e contribuicoes",
+    "Contas fixas",
+    "Saude e seguros",
+    "Transporte e veiculo",
+    "Mercado e alimentacao",
+    "Compras e casa",
+    "Assinaturas e digital",
+    "Educacao",
+    "Lazer",
+    "Pets",
+    "Negocio e fornecedores",
+    "Tarifas, juros e emprestimos",
+    "Pagamentos financeiros",
+    "Saque em dinheiro",
+    "Nao categorizado"
+  ],
+  "household_names": [
+    "FABIO DE SANTIS CAMPOS",
+    "VERONICA PINEIRO BOUZAS DO ESPIRITO SANTO",
+    "VERONICA PINEIRO BOUZAS DO ESPIRITO SANT",
+    "VERONICA PINEIRO B E SANT"
+  ],
+  "skip_patterns": [
+    "SALDO DO DIA",
+    "SALDO ANTERIOR"
+  ],
+  "stop_patterns": [
+    "LANCAMENTOS FUTUROS"
+  ],
+  "rules": [
+    {
+      "pattern": "DAS MEI",
+      "category": "Impostos e contribuicoes",
+      "priority": 100,
+      "nature": "tax"
+    },
+    {
+      "pattern": "DA DAS MEI",
+      "category": "Impostos e contribuicoes",
+      "priority": 100,
+      "nature": "tax"
+    },
+    {
+      "pattern": "EST DAS MEI",
+      "category": "Impostos e contribuicoes",
+      "priority": 100,
+      "nature": "refund"
+    },
+    {
+      "pattern": "RECEITA FEDERAL",
+      "category": "Impostos e contribuicoes",
+      "priority": 95,
+      "nature": "tax"
+    },
+    {
+      "pattern": "MUNICIPIO DE PERUIBE",
+      "category": "Impostos e contribuicoes",
+      "priority": 90,
+      "nature": "tax"
+    },
+    {
+      "pattern": "SABESP",
+      "category": "Contas fixas",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "NEOENERGIA",
+      "category": "Contas fixas",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "CLARO",
+      "category": "Contas fixas",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "PLANO SANTA SAUDE",
+      "category": "Saude e seguros",
+      "priority": 95,
+      "nature": "expense"
+    },
+    {
+      "pattern": "DROGARIA SAO PAULO",
+      "category": "Saude e seguros",
+      "priority": 95,
+      "nature": "expense"
+    },
+    {
+      "pattern": "DROGARIA POPMED",
+      "category": "Saude e seguros",
+      "priority": 95,
+      "nature": "expense"
+    },
+    {
+      "pattern": "VIACAO PIRACICABANA",
+      "category": "Transporte e veiculo",
+      "priority": 95,
+      "nature": "expense"
+    },
+    {
+      "pattern": "AUTOPASS",
+      "category": "Transporte e veiculo",
+      "priority": 95,
+      "nature": "expense"
+    },
+    {
+      "pattern": "ECOVIAS",
+      "category": "Transporte e veiculo",
+      "priority": 95,
+      "nature": "expense"
+    },
+    {
+      "pattern": "SEM PARAR",
+      "category": "Transporte e veiculo",
+      "priority": 95,
+      "nature": "expense"
+    },
+    {
+      "pattern": "MOBIFACIL",
+      "category": "Transporte e veiculo",
+      "priority": 95,
+      "nature": "expense"
+    },
+    {
+      "pattern": "AUTO POSTO",
+      "category": "Transporte e veiculo",
+      "priority": 95,
+      "nature": "expense"
+    },
+    {
+      "pattern": "CENTRO D S AUTO NET",
+      "category": "Transporte e veiculo",
+      "priority": 95,
+      "nature": "expense"
+    },
+    {
+      "pattern": "SP20 LAV 60 MINUTO",
+      "category": "Transporte e veiculo",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "KRILL PERUIBE",
+      "category": "Mercado e alimentacao",
+      "priority": 95,
+      "nature": "expense"
+    },
+    {
+      "pattern": "MERCADO EXTRA",
+      "category": "Mercado e alimentacao",
+      "priority": 95,
+      "nature": "expense"
+    },
+    {
+      "pattern": "MINI MERCADO",
+      "category": "Mercado e alimentacao",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "PANIFICADORA",
+      "category": "Mercado e alimentacao",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "FRUTAS",
+      "category": "Mercado e alimentacao",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "COCADASELIAS",
+      "category": "Mercado e alimentacao",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "SABORES DA EMPADA",
+      "category": "Lazer",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "BAR LOUNGE",
+      "category": "Lazer",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "QUIOSQUE",
+      "category": "Lazer",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "TUTTO BUONA",
+      "category": "Mercado e alimentacao",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "COMPANHIA BRASILEIRA DE D",
+      "category": "Mercado e alimentacao",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "ELECEBE COMERCIO DE ALIME",
+      "category": "Mercado e alimentacao",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "GRSA VIA MUND",
+      "category": "Mercado e alimentacao",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "LOJAS AMERICANAS",
+      "category": "Compras e casa",
+      "priority": 95,
+      "nature": "expense"
+    },
+    {
+      "pattern": "LOJAS AMERIC",
+      "category": "Compras e casa",
+      "priority": 85,
+      "nature": "expense"
+    },
+    {
+      "pattern": "COMPRE FACIL",
+      "category": "Compras e casa",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "V Z YAN COSMETICOS",
+      "category": "Compras e casa",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "MP PARAISOCAPAS",
+      "category": "Compras e casa",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "RZ EMBALAGENS",
+      "category": "Compras e casa",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "C PERNAMBUCA",
+      "category": "Compras e casa",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "PETSHOPGRIMALDI",
+      "category": "Pets",
+      "priority": 95,
+      "nature": "expense"
+    },
+    {
+      "pattern": "AGROPERUIBE",
+      "category": "Pets",
+      "priority": 90,
+      "nature": "expense"
+    },
+    {
+      "pattern": "SPOTIFY",
+      "category": "Assinaturas e digital",
+      "priority": 95,
+      "nature": "expense"
+    },
+    {
+      "pattern": "DM SPOTIFY",
+      "category": "Assinaturas e digital",
+      "priority": 95,
+      "nature": "expense"
+    },
+    {
+      "pattern": "COMPLEXO EDUCACIONAL CAST",
+      "category": "Educacao",
+      "priority": 95,
+      "nature": "expense"
+    },
+    {
+      "pattern": "FATURA PAGA ITAU UNICLAS",
+      "category": "Pagamentos financeiros",
+      "priority": 100,
+      "nature": "settlement"
+    },
+    {
+      "pattern": "PAGTO A VISTA SALDO DEV",
+      "category": "Pagamentos financeiros",
+      "priority": 100,
+      "nature": "settlement"
+    },
+    {
+      "pattern": "PAGAMENTO EMPRESTIMO CDC",
+      "category": "Tarifas, juros e emprestimos",
+      "priority": 100,
+      "nature": "loan"
+    },
+    {
+      "pattern": "PAGTO CDC",
+      "category": "Tarifas, juros e emprestimos",
+      "priority": 100,
+      "nature": "loan"
+    },
+    {
+      "pattern": "BB CREDITO AUTOMATICO",
+      "category": "Tarifas, juros e emprestimos",
+      "priority": 100,
+      "nature": "loan"
+    },
+    {
+      "pattern": "JUROS SALDO UTILIZ",
+      "category": "Tarifas, juros e emprestimos",
+      "priority": 100,
+      "nature": "fee"
+    },
+    {
+      "pattern": "JUROS ATRASO LIM CONTA",
+      "category": "Tarifas, juros e emprestimos",
+      "priority": 100,
+      "nature": "fee"
+    },
+    {
+      "pattern": "TARIFA MSG",
+      "category": "Tarifas, juros e emprestimos",
+      "priority": 100,
+      "nature": "fee"
+    },
+    {
+      "pattern": "SEGURO CARTAO",
+      "category": "Tarifas, juros e emprestimos",
+      "priority": 100,
+      "nature": "fee"
+    },
+    {
+      "pattern": "MENSALIDADE DE SEGURO",
+      "category": "Tarifas, juros e emprestimos",
+      "priority": 100,
+      "nature": "fee"
+    },
+    {
+      "pattern": "62307711GERS",
+      "category": "Tarifas, juros e emprestimos",
+      "priority": 80,
+      "nature": "fee"
+    },
+    {
+      "pattern": "ESCRITORIO DAS",
+      "category": "Negocio e fornecedores",
+      "priority": 80,
+      "nature": "income"
+    },
+    {
+      "pattern": "FIOTEC",
+      "category": "Receitas",
+      "priority": 70,
+      "nature": "income"
+    },
+    {
+      "pattern": "PIX MARKETPLACE",
+      "category": "Compras e casa",
+      "priority": 80,
+      "nature": "expense"
+    },
+    {
+      "pattern": "KAOZ BEER",
+      "category": "Lazer",
+      "priority": 80,
+      "nature": "expense"
+    },
+    {
+      "pattern": "PIRIQUITO",
+      "category": "Lazer",
+      "priority": 80,
+      "nature": "expense"
+    },
+    {
+      "pattern": "TUZINO FLORES",
+      "category": "Lazer",
+      "priority": 80,
+      "nature": "expense"
+    },
+    {
+      "pattern": "MARCELOLOPES",
+      "category": "Pessoas e terceiros",
+      "priority": 80,
+      "nature": "expense"
+    },
+    {
+      "pattern": "FABIO DE SANTIS CAMPOS",
+      "category": "Transferencias internas",
+      "priority": 120,
+      "nature": "transfer"
+    },
+    {
+      "pattern": "VERONICA PINEIRO BOUZAS DO ESPIRITO SANTO",
+      "category": "Transferencias internas",
+      "priority": 120,
+      "nature": "transfer"
+    },
+    {
+      "pattern": "VERONICA PINEIRO BOUZAS DO ESPIRITO SANT",
+      "category": "Transferencias internas",
+      "priority": 120,
+      "nature": "transfer"
+    },
+    {
+      "pattern": "VERONICA PINEIRO B E SANT",
+      "category": "Transferencias internas",
+      "priority": 120,
+      "nature": "transfer"
+    }
+  ]
+}
