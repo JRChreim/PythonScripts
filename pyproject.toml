@@ -17,6 +17,8 @@ dependencies = [
 [project.scripts]
 ecogen-bd-analysis = "scripts.ecogen_bd_analysis:main"
 mfc-bd-analysis = "scripts.mfc_bd_analysis:main"
+mfc-binary-quicklook = "scripts.mfc_binary_quicklook:main"
+mfc-binary-comparison = "scripts.mfc_binary_comparison:main"
 geom-progression = "scripts.geom_progression:main"
 mesh-stretch-geom-prog = "scripts.mesh_stretch_geom_prog:main"
 mesh-stretch-log-cosh = "scripts.mesh_stretch_log_cosh:main"
@@ -25,6 +27,10 @@ ecogen-out-summary = "scripts.ecogen_out_summary:main"
 plot-ecogen-out = "scripts.plot_ecogen_out:main"
 ecogen-quicklook = "scripts.ecogen_quicklook:main"
 gestfin-expenses = "scripts.gestfin_expenses:main"
+droplet-min-pressure-map = "scripts.droplet_min_pressure_map:main"
+droplet-min-pressure-timestep = "scripts.droplet_min_pressure_timestep:main"
+simoes-moreira-rho-vs-x = "scripts.analysis_simoes_moreira:main"
+stiffened-gas-eos = "scripts.stiffened_gas_eos:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

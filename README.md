@@ -22,6 +22,8 @@ The repository is organized so runnable scripts live under `scripts/`, reusable 
 - New runnable analyses should live under `scripts/`.
 - Several scripts still use hard-coded physical parameters and filesystem paths; prefer turning new configuration into top-level parameters, helper functions, or command-line arguments instead of scattering additional literals.
 - Keep plotting and post-processing workflows reproducible: new scripts should state required inputs near the top of the file and avoid hidden runtime assumptions.
+- Plotting convention: use SI units in square brackets for any unit-bearing axis, colorbar, or legend label, and keep figure text LaTeX-rendered through the shared helpers in `src/plots/publication.py`.
+- Plotting scripts should use `--no-show` to suppress the GUI window; `--no-plot` may remain only as a compatibility alias.
 - Reusable numerical code should live under `src/`, with the root kept clean for documentation and shared project notes.
 
 ## Usage
@@ -43,6 +45,12 @@ Then run:
 - `ecogen-out-summary --case Euler_IG_air --case 6Eq_pTEq --case 6Eq_pEq`
 - `plot-ecogen-out --case 6Eq_pEq --domain mixture --variable p --times 0 10`
 - `ecogen-quicklook`
+- `mfc-binary-quicklook --data-folder /disk/simulations/Relaxation/Thesis/ExpansionTube/pT/5Eqn/binary`
+- `mfc-binary-comparison --to-thesis`
+
+The MFC comparison workflow now produces three figures by default: an overview by simulation percentage, a zoom/inset figure for the front region, and a summary table of max differences.
+When `--to-thesis` is not used, the comparison script saves figures into case-organized folders under `artifacts/figures/mfc/<tube>/<mode>/`, so runs like `ExpansionTube_pT` and `ShockTube_pTg` stay distinct.
+Both MFC plotting commands also support `--to-thesis`, which keeps the preview titles visible but omits them from the thesis-exported PDFs.
 
 If you prefer not to install the project, the equivalent module form still works with `python3 -m scripts.<module_name>`.
 

@@ -14,6 +14,12 @@ Local working rules for agents and contributors in `PythonScripts`, adapted from
 - Favor compatibility with the style already used in the repo.
 - Add comments only where the numerical intent is not obvious from the code.
 - When modifying data-loading, optimization, or mesh-generation scripts, keep units, indexing, array shapes, and plotting assumptions aligned with the current implementation.
+- Plotting standard:
+  - Use SI units for any unit-bearing axis or colorbar label.
+  - Wrap units in square brackets, never round brackets.
+  - Keep plot text LaTeX-rendered by using the shared plotting style helpers in `src/plots/publication.py`.
+  - Use LaTeX math mode for symbols, ratios, titles, legends, and annotations whenever a plot is being prepared for publication or thesis export.
+  - Use `--no-show` as the standard CLI flag for suppressing the on-screen plot window; keep `--no-plot` only as a compatibility alias if an older script already exposes it.
 - Place runnable analyses and experiments under `scripts/`; keep root-level filenames only as thin compatibility wrappers when needed.
 - Place reusable logic under `src/` instead of duplicating helper code across scripts.
 - Use `snake_case` for repo-owned functions, variables, and new module names.
