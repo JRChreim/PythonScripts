@@ -47,10 +47,12 @@ Then run:
 - `ecogen-quicklook`
 - `mfc-binary-quicklook --data-folder /disk/simulations/Relaxation/Thesis/ExpansionTube/pT/5Eqn/binary`
 - `mfc-binary-comparison --to-thesis`
+- `mfc-binary-pressure-probe-timestep --data-folder /disk/simulations/Relaxation/CylinderAerobreakup/IC/pTg/3F/NoStretch/PureFluid/NoDroplet/binary`
 
 The MFC comparison workflow now produces three figures by default: an overview by simulation percentage, a zoom/inset figure for the front region, and a summary table of max differences.
 When `--to-thesis` is not used, the comparison script saves figures into case-organized folders under `artifacts/figures/mfc/<tube>/<mode>/`, so runs like `ExpansionTube_pT` and `ShockTube_pTg` stay distinct.
-Both MFC plotting commands also support `--to-thesis`, which keeps the preview titles visible but omits them from the thesis-exported PDFs.
+All MFC plotting commands also support `--to-thesis`, which keeps the preview titles visible but omits them from the thesis-exported PDFs.
+For the pressure probe script, `--pressure-scale 1` gives raw Pa, `--pressure-scale 1e5` keeps the default normalization, and `--pressure-scale 1e6` reports MPa.
 
 If you prefer not to install the project, the equivalent module form still works with `python3 -m scripts.<module_name>`.
 

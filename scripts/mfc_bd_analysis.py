@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
 try:
     from _bootstrap import ensure_repo_root_on_path
@@ -33,13 +34,16 @@ from src.plots.publication import (
 DEFAULT_DATA_FOLDER = Path(
     "/disk/simulations/Relaxation/BubbleCollapse/2D/Sphere/StrongCollapse/pT/6Eqn/Axisymmetric"
 )
-PRESSURE_TYPES = ("p", "pT")
 RESOLUTION_ORDER = ("N150E1", "N160E3", "N320E3", "N640E3", "N128E4", "N256E4")
-
-# Emphasize the pressure-model data and render the KM solutions as an envelope.
-COLORS = {
-    "p": "#0072B2",
-    "pT": "#000000",
+SERIES_COLORS = {
+    ("6Eqn", "p"): "#0072B2",
+    ("6Eqn", "pT"): "#000000",
+    ("5Eqn", "pT"): "#000000",
+}
+SERIES_MARKERS = {
+    ("6Eqn", "p"): None,
+    ("6Eqn", "pT"): "o",
+    ("5Eqn", "pT"): "s",
 }
 
 BASE_LINEWIDTH = 2.0
@@ -53,30 +57,57 @@ PUBLICATION_FIGURE_SIZE = (10, 5)
 ZOOM_X_LIMITS = (0.95, 1.05)
 ZOOM_Y_LIMITS = (-0.05, 0.40)
 THESIS_MAIN_TITLE = r"$\mathrm{Strong\ collapse\ problem\ (MFC)}$"
-PUBLICATION_MAIN_TITLE = r"$\mathrm{Radial\ evolution,\ strong\ collapse\ problem\ (MFC,\ p\ and\ pT)}$"
+PUBLICATION_MAIN_TITLE = r"$\mathrm{Radial\ evolution,\ strong\ collapse\ problem\ (MFC)}$"
 ZOOM_PANEL_TITLE = r"$\mathrm{Zoom:}\ 0.85 \leq t/t_c \leq 1.15$"
 
 STYLES = {
-    "N150E1": {"linestyle": "-", "marker": "v"},
-    "N160E3": {"linestyle": "-", "marker": "o"},
-    "N320E3": {"linestyle": "--", "marker": "s"},
-    "N640E3": {"linestyle": "-.", "marker": "^"},
-    "N128E4": {"linestyle": ":", "marker": "d"},
-    "N256E4": {"linestyle": "-", "marker": "x"},
+    "N150E1": {"linestyle": "-"},
+    "N160E3": {"linestyle": "--"},
+    "N320E3": {"linestyle": "-."},
+    "N640E3": {"linestyle": ":"},
+    "N128E4": {"linestyle": (0, (5.0, 1.5, 1.0, 1.5))},
+    "N256E4": {"linestyle": (0, (1.0, 1.0, 3.0, 1.0, 1.0, 1.0))},
 }
 THEORY_STYLES = {
     r"$\mathrm{Isentropic\ KM}$": {"color": "#808080", "linestyle": "-", "linewidth": KM_LINEWIDTH},
-    r"$\mathrm{Isothermal\ KM}$": {"color": "#808080", "linestyle": "--", "linewidth": KM_LINEWIDTH},
+    r"$\mathrm{Isothermal\ KM}$": {"color": "#808080", "linestyle": "-", "linewidth": KM_LINEWIDTH},
 }
 FALLBACK_STYLES = (
-    {"linestyle": "-", "marker": "o"},
-    {"linestyle": "--", "marker": "s"},
-    {"linestyle": "-.", "marker": "^"},
-    {"linestyle": ":", "marker": "d"},
-    {"linestyle": "-", "marker": "x"},
-    {"linestyle": "--", "marker": "P"},
-    {"linestyle": "-.", "marker": "v"},
+    {"linestyle": "-"},
+    {"linestyle": "--"},
+    {"linestyle": "-."},
+    {"linestyle": ":"},
+    {"linestyle": (0, (5.0, 1.5, 1.0, 1.5))},
+    {"linestyle": (0, (1.0, 1.0, 3.0, 1.0, 1.0, 1.0))},
+    {"linestyle": (0, (3.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0))},
 )
+
+
+def infer_equation_data_folder(base_folder: Path, equation_type: str) -> Path:
+    folder_parts = list(base_folder.parts)
+    try:
+        equation_index = folder_parts.index("6Eqn")
+    except ValueError:
+        return base_folder
+
+    folder_parts[equation_index] = equation_type
+    return Path(*folder_parts)
+
+
+def get_series_color(case_label: str, pressure_type: str) -> str:
+    return SERIES_COLORS.get((case_label, pressure_type), "#404040")
+
+
+def get_series_marker(case_label: str, pressure_type: str):
+    return SERIES_MARKERS.get((case_label, pressure_type))
+
+
+def build_series_label(case_label: str, pressure_type: str, resolution: str) -> str:
+    return rf"$\mathrm{{{case_label}\ {pressure_type}\ {resolution}}}$"
+
+
+def build_series_type_label(case_label: str, pressure_type: str) -> str:
+    return rf"$\mathrm{{{case_label}\ {pressure_type}}}$"
 
 
 def build_mfc_radius_history(filepath: Path):
@@ -123,6 +154,173 @@ def get_resolution_style(resolution: str):
     return FALLBACK_STYLES[fallback_index]
 
 
+def build_resolution_legend_handles(radius_series):
+    seen_resolutions = []
+    for series in radius_series:
+        resolution = series["resolution"]
+        if resolution not in seen_resolutions:
+            seen_resolutions.append(resolution)
+
+    handles = []
+    for resolution in seen_resolutions:
+        handles.append(
+            Line2D(
+                [0],
+                [0],
+                color="#404040",
+                linestyle=get_resolution_style(resolution)["linestyle"],
+                linewidth=PT_LINEWIDTH,
+                label=resolution,
+            )
+        )
+    return handles
+
+
+def build_series_legend_handles(radius_series):
+    seen_series = []
+    for series in radius_series:
+        series_key = (series["case_label"], series["pressure_type"])
+        if series_key not in seen_series:
+            seen_series.append(series_key)
+
+    ordered_series = [
+        series_key
+        for series_key in (("6Eqn", "p"), ("6Eqn", "pT"), ("5Eqn", "pT"))
+        if series_key in seen_series
+    ]
+
+    handles = []
+    for case_label, pressure_type in ordered_series:
+        handles.append(
+            Line2D(
+                [0],
+                [0],
+                color=get_series_color(case_label, pressure_type),
+                linestyle="-",
+                linewidth=PT_LINEWIDTH,
+                marker=get_series_marker(case_label, pressure_type),
+                markersize=8,
+                label=build_series_type_label(case_label, pressure_type),
+            )
+        )
+    return handles
+
+
+def add_semantic_legends(axis, radius_series, *, thesis_mode: bool):
+    legend_fontsize = max(7, THESIS_TICK_FONT_SIZE - 1) if thesis_mode else 8
+
+    resolution_handles = build_resolution_legend_handles(radius_series)
+    series_handles = build_series_legend_handles(radius_series)
+
+    if resolution_handles:
+        resolution_legend = axis.legend(
+            handles=resolution_handles,
+            title=r"$\mathrm{Resolution}$",
+            loc="lower left",
+            fontsize=legend_fontsize,
+            title_fontsize=legend_fontsize,
+            ncol=1,
+            framealpha=0.95,
+            handlelength=2.6,
+            columnspacing=1.0,
+        )
+        axis.add_artist(resolution_legend)
+
+    if series_handles:
+        axis.legend(
+            handles=series_handles,
+            title=r"$\mathrm{Series}$",
+            loc="upper right",
+            fontsize=legend_fontsize,
+            title_fontsize=legend_fontsize,
+            ncol=1,
+            framealpha=0.95,
+            handlelength=2.6,
+        )
+
+
+def add_km_rebound_annotations(axis, theory_histories, *, thesis_mode: bool):
+    def clamp(value: float, lower: float, upper: float) -> float:
+        return min(max(value, lower), upper)
+
+    x_left, x_right = axis.get_xlim()
+    y_bottom, y_top = axis.get_ylim()
+    x_span = x_right - x_left
+    y_span = y_top - y_bottom
+    wide_view = x_span > 0.2
+    annotation_fontsize = max(8, THESIS_TICK_FONT_SIZE - 1) if thesis_mode else 8
+    arrow_color = "#6E6E6E"
+    text_color = "#202020"
+    bbox_style = dict(boxstyle="round,pad=0.2", facecolor="white", edgecolor="none", alpha=0.85)
+
+    placements = (
+        (
+            r"$\mathrm{Isentropic\ KM}$",
+            r"$\mathrm{KM\ isentropic}$",
+            1.200,
+            0.025 * x_span if not wide_view else 0.010 * x_span,
+            0.080 * y_span if not wide_view else 0.405,
+            "arc3,rad=0.18",
+        ),
+        (
+            r"$\mathrm{Isothermal\ KM}$",
+            r"$\mathrm{KM\ isothermal}$",
+            1.200,
+            -0.025 * x_span if not wide_view else 0.60,
+            -0.060 * y_span if not wide_view else 0.22,
+            "arc3,rad=-0.18",
+        ),
+    )
+
+    for theory_label, annotation_text, anchor_x, x_shift, y_shift, connection_style in placements:
+        theory = theory_histories.get(theory_label)
+        if theory is None:
+            continue
+
+        target_x = clamp(anchor_x, x_left + 0.55 * x_span, x_right - 0.12 * x_span)
+        target_y = float(
+            np.interp(
+                target_x,
+                theory["normalized_time"],
+                theory["normalized_radius"],
+            )
+        )
+        if wide_view:
+            if theory_label == r"$\mathrm{Isentropic\ KM}$":
+                text_x = clamp(
+                    target_x + x_shift,
+                    x_left + 0.02 * x_span,
+                    x_right - 0.03 * x_span,
+                )
+            else:
+                text_x = clamp(x_shift, x_left + 0.02 * x_span, x_right - 0.03 * x_span)
+            text_y = clamp(y_shift, y_bottom + 0.08 * y_span, y_top - 0.08 * y_span)
+        else:
+            text_x = clamp(target_x + x_shift, x_left + 0.02 * x_span, x_right - 0.03 * x_span)
+            text_y = clamp(target_y + y_shift, y_bottom + 0.08 * y_span, y_top - 0.08 * y_span)
+
+        axis.annotate(
+            annotation_text,
+            xy=(target_x, target_y),
+            xytext=(text_x, text_y),
+            textcoords="data",
+            fontsize=annotation_fontsize,
+            color=text_color,
+            ha="left",
+            va="center",
+            arrowprops=dict(
+                arrowstyle="->",
+                color=arrow_color,
+                lw=1.0,
+                shrinkA=0.0,
+                shrinkB=0.0,
+                connectionstyle=connection_style,
+            ),
+            bbox=bbox_style,
+            zorder=5,
+        )
+
+
 def build_km_envelope(theory_histories, time_limit=None):
     if not theory_histories:
         return None
@@ -148,49 +346,78 @@ def build_km_envelope(theory_histories, time_limit=None):
     return common_time, lower_envelope, upper_envelope
 
 
-def load_radius_series(data_folder: Path):
+def load_radius_series_for_pressure(
+    data_folder: Path,
+    pressure_type: str,
+    case_label: str,
+    selected_resolutions: list[str] | None = None,
+):
     radius_series = []
     simulation_end_time = None
+    pressure_data_folder = get_pressure_data_folder(data_folder, pressure_type)
+    available_pressure_files = sorted(
+        pressure_data_folder.glob(f"BD{pressure_type}N*.xyz"),
+        key=lambda path: resolution_sort_key(get_resolution_from_path(path, pressure_type)),
+    )
 
-    for pressure_type in PRESSURE_TYPES:
-        pressure_data_folder = get_pressure_data_folder(data_folder, pressure_type)
-        pressure_files = sorted(
-            pressure_data_folder.glob(f"BD{pressure_type}N*.xyz"),
-            key=lambda path: resolution_sort_key(
-                get_resolution_from_path(path, pressure_type)
-            ),
+    if not available_pressure_files:
+        print(
+            f"{pressure_data_folder} has no {case_label} BD{pressure_type}N*.xyz files"
         )
+        return radius_series, simulation_end_time
 
-        if not pressure_files:
-            print(f"{pressure_data_folder} has no BD{pressure_type}N*.xyz files")
+    selected_resolution_set = (
+        set(selected_resolutions) if selected_resolutions is not None else None
+    )
+    available_resolutions = {
+        get_resolution_from_path(filepath, pressure_type)
+        for filepath in available_pressure_files
+    }
+    if selected_resolution_set is None:
+        pressure_files = available_pressure_files
+    else:
+        pressure_files = [
+            filepath
+            for filepath in available_pressure_files
+            if get_resolution_from_path(filepath, pressure_type)
+            in selected_resolution_set
+        ]
+        missing_resolutions = selected_resolution_set - available_resolutions
+        if missing_resolutions:
+            missing_text = ", ".join(
+                sorted(missing_resolutions, key=resolution_sort_key)
+            )
+            print(
+                f"{pressure_data_folder} has no {case_label} BD{pressure_type} files for: {missing_text}"
+            )
+
+    for filepath in pressure_files:
+        resolution = get_resolution_from_path(filepath, pressure_type)
+
+        try:
+            normalized_time, normalized_radius, _ = build_mfc_radius_history(filepath)
+        except OSError:
+            print(f"{filepath} not found")
             continue
 
-        for filepath in pressure_files:
-            resolution = get_resolution_from_path(filepath, pressure_type)
+        if simulation_end_time is None:
+            simulation_end_time = normalized_time[-1]
+        else:
+            simulation_end_time = max(simulation_end_time, normalized_time[-1])
 
-            try:
-                normalized_time, normalized_radius, _ = build_mfc_radius_history(
-                    filepath
-                )
-            except OSError:
-                print(f"{filepath} not found")
-                continue
-
-            if simulation_end_time is None:
-                simulation_end_time = normalized_time[-1]
-            else:
-                simulation_end_time = max(simulation_end_time, normalized_time[-1])
-
-            radius_series.append(
-                {
-                    "color": COLORS[pressure_type],
-                    "label": rf"$\mathrm{{{pressure_type}\ {resolution}}}$",
-                    "linestyle": get_resolution_style(resolution)["linestyle"],
-                    "marker": get_resolution_style(resolution)["marker"],
-                    "normalized_radius": normalized_radius,
-                    "normalized_time": normalized_time,
-                }
-            )
+        radius_series.append(
+            {
+                "case_label": case_label,
+                "color": get_series_color(case_label, pressure_type),
+                "label": build_series_label(case_label, pressure_type, resolution),
+                "marker": get_series_marker(case_label, pressure_type),
+                "pressure_type": pressure_type,
+                "resolution": resolution,
+                "linestyle": get_resolution_style(resolution)["linestyle"],
+                "normalized_radius": normalized_radius,
+                "normalized_time": normalized_time,
+            }
+        )
 
     return radius_series, simulation_end_time
 
@@ -282,9 +509,8 @@ def plot_radius_histories_on_axis(
     if thesis_mode:
         axis.tick_params(labelsize=THESIS_TICK_FONT_SIZE)
     if show_legend:
-        handles, labels = axis.get_legend_handles_labels()
-        if handles:
-            axis.legend(handles, labels, ncol=2)
+        add_semantic_legends(axis, radius_series, thesis_mode=thesis_mode)
+    add_km_rebound_annotations(axis, theory_histories, thesis_mode=thesis_mode)
 
 
 def create_radius_history_figure(
@@ -336,15 +562,42 @@ def create_radius_history_figure(
 
 def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Compare bubble-radius histories for the MFC p and pT strong-collapse cases."
+        description="Compare bubble-radius histories for the MFC 6Eqn p, 6Eqn pT, and 5Eqn pT strong-collapse cases."
     )
     add_thesis_export_argument(parser, default_stem=THESIS_EXPORT_STEM)
     add_show_titles_argument(parser)
     parser.add_argument(
         "--data-folder",
+        "--six-eqn-data-folder",
+        dest="six_eqn_data_folder",
         type=Path,
         default=DEFAULT_DATA_FOLDER,
-        help="Folder containing the BDpTN*.xyz radius-history files; the p folder is inferred as a sibling.",
+        help="Folder containing the 6Eqn BDpTN*.xyz radius-history files; the 6Eqn p folder is inferred as a sibling.",
+    )
+    parser.add_argument(
+        "--five-eqn-data-folder",
+        type=Path,
+        default=None,
+        help=(
+            "Folder containing the 5Eqn BDpTN*.xyz radius-history files. "
+            "Defaults to the 6Eqn folder with 6Eqn replaced by 5Eqn."
+        ),
+    )
+    parser.add_argument(
+        "--p-resolutions",
+        nargs="+",
+        metavar="RESOLUTION",
+        default=None,
+        help="Load only these 6Eqn p resolutions, after sorting by the canonical resolution order. Omit to load all 6Eqn p files.",
+    )
+    parser.add_argument(
+        "--pt-resolutions",
+        "--pT-resolutions",
+        dest="pt_resolutions",
+        nargs="+",
+        metavar="RESOLUTION",
+        default=None,
+        help="Load only these pT resolutions, after sorting by the canonical resolution order. The same list is used for both 6Eqn pT and 5Eqn pT; omit to load all available pT files.",
     )
     parser.add_argument(
         "--no-show",
@@ -355,16 +608,49 @@ def build_argument_parser() -> argparse.ArgumentParser:
 
 
 def plot_radius_histories(
-    data_folder: Path,
+    six_eqn_data_folder: Path,
     thesis_mode: bool = False,
     show_titles: bool = False,
+    p_resolutions: list[str] | None = None,
+    pt_resolutions: list[str] | None = None,
+    five_eqn_data_folder: Path | None = None,
 ):
     if thesis_mode:
         apply_thesis_style()
     else:
         apply_publication_style()
 
-    radius_series, simulation_end_time = load_radius_series(data_folder)
+    if five_eqn_data_folder is None:
+        five_eqn_data_folder = infer_equation_data_folder(
+            six_eqn_data_folder,
+            "5Eqn",
+        )
+
+    p_series, p_end_time = load_radius_series_for_pressure(
+        six_eqn_data_folder,
+        "p",
+        "6Eqn",
+        selected_resolutions=p_resolutions,
+    )
+    pT_series, pT_end_time = load_radius_series_for_pressure(
+        six_eqn_data_folder,
+        "pT",
+        "6Eqn",
+        selected_resolutions=pt_resolutions,
+    )
+    five_eqn_pT_series, five_eqn_pT_end_time = load_radius_series_for_pressure(
+        five_eqn_data_folder,
+        "pT",
+        "5Eqn",
+        selected_resolutions=pt_resolutions,
+    )
+    radius_series = p_series + pT_series + five_eqn_pT_series
+    end_times = [
+        time
+        for time in (p_end_time, pT_end_time, five_eqn_pT_end_time)
+        if time is not None
+    ]
+    simulation_end_time = max(end_times) if end_times else None
     theory_histories = build_theory_histories(simulation_end_time)
 
     km_envelope = build_km_envelope(theory_histories, time_limit=simulation_end_time)
@@ -399,10 +685,19 @@ def plot_radius_histories(
 
 def main(argv=None):
     args = build_argument_parser().parse_args(argv)
+    five_eqn_data_folder = args.five_eqn_data_folder
+    if five_eqn_data_folder is None:
+        five_eqn_data_folder = infer_equation_data_folder(
+            args.six_eqn_data_folder,
+            "5Eqn",
+        )
     (full_figure, _), (zoom_figure, _) = plot_radius_histories(
-        args.data_folder,
+        args.six_eqn_data_folder,
         thesis_mode=args.to_thesis,
         show_titles=args.show_titles,
+        p_resolutions=args.p_resolutions,
+        pt_resolutions=args.pt_resolutions,
+        five_eqn_data_folder=five_eqn_data_folder,
     )
 
     if args.to_thesis:
