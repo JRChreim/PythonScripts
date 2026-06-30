@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 import matplotlib.pyplot as plt
 
@@ -54,7 +55,10 @@ THESIS_SAVEFIG_KWARGS = {
 
 
 def _apply_style(style):
-    plt.rcParams.update(style)
+    resolved_style = dict(style)
+    if os.environ.get("PYTHONSCRIPTS_NO_TEX"):
+        resolved_style["text.usetex"] = False
+    plt.rcParams.update(resolved_style)
 
 
 def escape_latex_text(text: str) -> str:

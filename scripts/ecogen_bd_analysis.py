@@ -1,5 +1,11 @@
 import argparse
+import os
 from pathlib import Path
+
+os.environ.setdefault(
+    "MPLCONFIGDIR",
+    str(Path(__file__).resolve().parents[1] / "artifacts" / ".matplotlib"),
+)
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -222,6 +228,10 @@ def plot_radius_histories(
 
 def main(argv=None):
     args = build_argument_parser().parse_args(argv)
+    if args.no_show:
+        os.environ.setdefault("PYTHONSCRIPTS_NO_TEX", "1")
+        plt.switch_backend("Agg")
+
     figure, _ = plot_radius_histories(
         args.data_folder,
         thesis_mode=args.to_thesis,
