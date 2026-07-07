@@ -1,0 +1,93 @@
+# TecConcursos site configuration and option catalog.
+#
+# Edit this file when TecConcursos changes labels or available values.
+# Notebook combinations live in cadernos.yaml.
+
+site:
+  login_url: "https://www.tecconcursos.com.br/login"
+  login:
+    email: "Endereço de e-mail"
+    password: "Senha de acesso"
+    submit: "Entrar no site"
+  notebook_controls:
+    create_button: "Criar novo caderno de estudo"
+    name_field: "Nome do caderno"
+    generate_button: "Gerar Caderno"
+  search:
+    trigger_text: "Pesquisar por nome"
+    textbox_name: "Digite pelo menos três"
+  filters:
+    "Matéria e assunto":
+      mode: search
+      exact: true
+      values:
+        - "Princípios Contábeis"
+    "Banca":
+      mode: search
+      exact: true
+      values:
+        - "CEBRASPE (CESPE)"
+        - "FGV"
+        - "FCC"
+    "Órgão e cargo":
+      mode: search
+      exact: true
+      values:
+        - "Auditor Fiscal da Receita Estadual (SEFAZ RJ)"
+    "Formação":
+      mode: search
+      exact: true
+      values:
+        - "Engenharia Aeroespacial"
+        - "Ciências Contábeis"
+    "Região":
+      mode: search
+      exact: true
+      values:
+        - "SP (São Paulo)"
+        - "RJ (Rio de Janeiro)"
+    "Ano":
+      mode: click
+      exact: true
+      values:
+        - "2026"
+        - "2025"
+        - "2024"
+        - "2023"
+    "Área (Carreira)":
+      mode: click
+      exact: true
+      values:
+        - "Fiscal"
+        - "Administrativa"
+    "Escolaridade":
+      mode: click
+      exact: true
+      values:
+        - "Superior"
+        - "Médio"
+  options:
+    button: "Opções"
+    labels:
+      somente_comentadas: "Somente comentadas em TEXTO (Professor)"
+      dificuldade: "Dificuldade média"
+      tipo_questao: "Múltipla escolha"
+      gabarito: "CERTO"
+    available:
+      somente_comentadas:
+        - true
+        - false
+      dificuldade:
+        - "Dificuldade média"
+      tipo_questao:
+        - "Múltipla escolha"
+      gabarito:
+        - "CERTO"
+        - "ERRADO"
+      remover:
+        - "Remover as que acertei"
+        - "Remover anuladas"
+        - "Remover desatualizadas"
+    first_match:
+      - "Remover anuladas"
+      - "Remover desatualizadas"

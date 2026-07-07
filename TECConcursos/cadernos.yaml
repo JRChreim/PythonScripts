@@ -1,0 +1,35 @@
+# TecConcursos notebook presets.
+#
+# Edit this file when you want new notebook combinations. The available site
+# labels live in site.yaml. Add an optional `opcoes:` block inside a preset
+# only when you want notebook options to be applied.
+
+cadernos:
+  - nome: "Contabilidade - Multibanca"
+    filtros:
+      "Matéria e assunto":
+        - "Princípios Contábeis"
+      # "Banca":
+      #   - "CEBRASPE (CESPE)"
+      #   - "FGV"
+      #   - "FCC"
+      # "Órgão e cargo":
+      #   - "Auditor Fiscal da Receita Estadual (SEFAZ RJ)"
+      "Ano":
+        - "2026"
+        - "2025"
+        - "2024"
+        - "2023"
+      "Área (Carreira)":
+        - "Fiscal"
+      "Escolaridade":
+        - "Superior"
+    # opcoes:
+    #   somente_comentadas: true
+    #   dificuldade: "Dificuldade média"
+    #   tipo_questao: "Múltipla escolha"
+    #   gabarito: "CERTO"
+    #   remover:
+    #     - "Remover as que acertei"
+    #     - "Remover anuladas"
+    #     - "Remover desatualizadas"
