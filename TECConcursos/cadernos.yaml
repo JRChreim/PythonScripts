@@ -9,10 +9,11 @@ cadernos:
     filtros:
       "Matéria e assunto":
         - "Princípios Contábeis"
-      # "Banca":
-      #   - "CEBRASPE (CESPE)"
-      #   - "FGV"
-      #   - "FCC"
+        - "Plano de Contas"
+      "Banca":
+        - "CEBRASPE (CESPE)"
+        - "FGV"
+        - "FCC"
       # "Órgão e cargo":
       #   - "Auditor Fiscal da Receita Estadual (SEFAZ RJ)"
       "Ano":

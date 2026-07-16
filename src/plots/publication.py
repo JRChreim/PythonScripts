@@ -1,11 +1,27 @@
-from pathlib import Path
 import os
+import shutil
+import subprocess
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 
-THESIS_EXPORT_DIR = Path(
-    "/home/user/Documents/GitHub/Caltech-Thesis---JRChreim/Figures"
-)
+def _default_thesis_export_dir() -> Path:
+    configured_dir = os.environ.get("PYTHONSCRIPTS_THESIS_FIGURES_DIR")
+    if configured_dir:
+        return Path(configured_dir).expanduser()
+
+    repo_relative_dir = (
+        Path(__file__).resolve().parents[2].parent
+        / "Caltech-Thesis---JRChreim"
+        / "Figures"
+    )
+    if repo_relative_dir.exists():
+        return repo_relative_dir
+
+    return Path("/home/user/Documents/GitHub/Caltech-Thesis---JRChreim/Figures")
+
+
+THESIS_EXPORT_DIR = _default_thesis_export_dir()
 
 _SERIF_LATEX_STYLE = {
     "text.usetex": True,
@@ -54,9 +70,30 @@ THESIS_SAVEFIG_KWARGS = {
 }
 
 
+def _latex_backend_is_available() -> bool:
+    if shutil.which("latex") is None:
+        return False
+    if shutil.which("kpsewhich") is None:
+        return True
+
+    try:
+        result = subprocess.run(
+            ["kpsewhich", "underscore.sty"],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=5.0,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return result.returncode == 0
+
+
 def _apply_style(style):
     resolved_style = dict(style)
-    if os.environ.get("PYTHONSCRIPTS_NO_TEX"):
+    if os.environ.get("PYTHONSCRIPTS_NO_TEX") or (
+        resolved_style.get("text.usetex") and not _latex_backend_is_available()
+    ):
         resolved_style["text.usetex"] = False
     plt.rcParams.update(resolved_style)
 
