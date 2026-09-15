@@ -75,6 +75,10 @@ PELANTI_LABEL = r"$\mathrm{Pelanti\ (2022)}$"
 RODIO_ABGRALL_LABEL = r"$\mathrm{Rodio\!-\!Abgrall\ (2015)}$"
 SAUREL_PETITPAS_ABGRALL_LABEL = r"$\mathrm{Saurel\ et\ al.\ (2008)}$"
 ZEIN_HANTKE_WARNECKE_LABEL = r"$\mathrm{Zein\ et\ al.\ (2010)}$"
+BD_NUMERICAL_COLOR = "#000000"
+BD_REFERENCE_COLOR = "#808080"
+BD_5EQ_MARKER = "^"
+BD_6EQ_MARKER = "o"
 ANNOTATION_BBOX = {
     "boxstyle": "round,pad=0.18",
     "facecolor": (1.0, 1.0, 1.0, 0.0),
@@ -449,32 +453,38 @@ def main(argv=None):
         _build_velocity_series(
             *load_two_column_csv(args.velocity_exp_input),
             label=EXPERIMENT_LABEL,
-            color="black",
+            color=BD_REFERENCE_COLOR,
             marker="s",
-            linestyle="None",
+            linestyle="-",
             markersize=exp_markersize,
-            linewidth=0.0,
+            linewidth=model_linewidth,
             zorder=4.0,
         ),
         _build_velocity_series(
             *load_two_column_csv(args.velocity_5eq_input),
             label=MODEL_5EQ_LABEL,
-            color="0.60",
-            marker="v",
-            linestyle=(0, (4.0, 3.0)),
+            color=BD_NUMERICAL_COLOR,
+            marker=BD_5EQ_MARKER,
+            linestyle="-",
             markersize=model_markersize,
             linewidth=model_linewidth,
             zorder=3.0,
+            markerfacecolor="none",
+            markeredgecolor=BD_NUMERICAL_COLOR,
+            markeredgewidth=1.5,
         ),
         _build_velocity_series(
             *load_two_column_csv(args.velocity_6eq_input),
             label=MODEL_6EQ_LABEL,
-            color="0.75",
-            marker="v",
-            linestyle=(0, (4.0, 3.0)),
+            color=BD_NUMERICAL_COLOR,
+            marker=BD_6EQ_MARKER,
+            linestyle="-",
             markersize=model_markersize,
             linewidth=model_linewidth,
             zorder=2.0,
+            markerfacecolor="none",
+            markeredgecolor=BD_NUMERICAL_COLOR,
+            markeredgewidth=1.5,
         ),
         _build_velocity_series(
             *load_two_column_csv(args.velocity_pelanti_input),
@@ -568,13 +578,14 @@ def _build_velocity_series(
     *,
     label: str,
     color: str,
-    marker: str,
+    marker: str | None,
     linestyle,
     markersize: float,
     linewidth: float,
     zorder: float,
     markerfacecolor: str | None = None,
     markeredgecolor: str | None = None,
+    markeredgewidth: float | None = None,
 ) -> dict[str, np.ndarray | str]:
     series = {
         "temperature": temperature,
@@ -591,6 +602,8 @@ def _build_velocity_series(
         series["markerfacecolor"] = markerfacecolor
     if markeredgecolor is not None:
         series["markeredgecolor"] = markeredgecolor
+    if markeredgewidth is not None:
+        series["markeredgewidth"] = markeredgewidth
     return series
 
 
