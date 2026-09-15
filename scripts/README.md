@@ -9,8 +9,8 @@ Current highlights:
 - `ecogen_out_summary.py`: inventory selected ECOGEN result cases and load dataset `.out` files into fluid and mixture blocks
 - `plot_ecogen_out.py`: plot selected ECOGEN `.out` variables versus `x` for mixture or fluid fields
 - `ecogen_quicklook.py`: notebook-style multi-panel exploratory plotting with an editable config block
-- `mfc_binary_quicklook.py`: read MFC binary `root/*.dat` snapshots and plot a handful of 1D profiles across saved steps, with `--to-thesis` PDF export support
-- `mfc_binary_comparison.py`: compare `5Eqn` and `6Eqn` MFC binary snapshots with percentage-based overview plots, zoom insets, a summary table, case-organized output folders such as `artifacts/figures/mfc/expansion_tube/pT/` or `artifacts/figures/mfc/shock_tube/pTg/`, and `--to-thesis` PDF export support
+- `mfc_binary_quicklook.py`: read MFC binary `root/*.dat` snapshots and plot a handful of 1D profiles across saved steps, including derived composition fractions `Y_i = m_i / \sum m_i`, with `--to-thesis` PDF export support
+- `mfc_binary_comparison.py`: compare two MFC binary cases with percentage-based overview plots, zoom insets, a summary table, derived composition fractions `Y_i = m_i / \sum m_i`, a `--composition-mode` switch for the default `(\alpha_i, m_i)` pair panels versus `Y_i` panels, configurable legend labels such as `pT` and `pTg`, case-organized output folders such as `artifacts/figures/mfc/expansion_tube/pT/` or `artifacts/figures/mfc/expansion_tube/pT/yi/`, and `--to-thesis` PDF export support
 - `mfc_binary_pressure_probe_timestep.py`: track pressure versus saved step at one or more fixed x locations using the nearest cell centers, with configurable `--pressure-scale` and `--to-thesis` PDF export support
 - `droplet_min_pressure_map.py`: plot `(x, y)` locations of minimum pressure events colored by `min_pres`
 - `droplet_min_pressure_timestep.py`: plot `min_pres` versus timestep for the pure-fluid and mixture histories

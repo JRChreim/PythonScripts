@@ -58,6 +58,8 @@ def _apply_style(style):
     resolved_style = dict(style)
     if os.environ.get("PYTHONSCRIPTS_NO_TEX"):
         resolved_style["text.usetex"] = False
+        resolved_style["font.serif"] = ["DejaVu Serif"]
+        resolved_style["mathtext.fontset"] = "dejavuserif"
     plt.rcParams.update(resolved_style)
 
 

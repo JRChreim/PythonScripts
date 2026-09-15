@@ -14,6 +14,7 @@ except ModuleNotFoundError:
 ensure_repo_root_on_path()
 
 from src.io.mfc_binary import (
+    resolve_mfc_binary_variable,
     discover_mfc_binary_snapshot_directory,
     discover_mfc_binary_steps,
     load_mfc_binary_snapshot,
@@ -30,18 +31,20 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DATA_FOLDER = Path(
     "/disk/simulations/Relaxation/Thesis/ExpansionTube/pT/5Eqn/binary"
 )
-DEFAULT_VARIABLES = ("pres", "vel1", "alpha1", "alpha2", "alpha3")
+DEFAULT_VARIABLES = ("Y1", "Y2", "Y3", "pres", "vel1")
 DEFAULT_SAMPLE_COUNT = 5
 DEFAULT_OUTPUT = REPO_ROOT / "artifacts" / "figures" / "mfc_binary_quicklook.png"
-THESIS_EXPORT_STEM = "MFC_ExpansionTube_pT_5Eqn_binary"
 
 FIELD_LABELS = {
-    "alpha_rho1": r"$\alpha_1 \rho_1\ [\mathrm{kg\,m^{-3}}]$",
-    "alpha_rho2": r"$\alpha_2 \rho_2\ [\mathrm{kg\,m^{-3}}]$",
-    "alpha_rho3": r"$\alpha_3 \rho_3\ [\mathrm{kg\,m^{-3}}]$",
-    "alpha1": r"$\alpha_1$",
-    "alpha2": r"$\alpha_2$",
-    "alpha3": r"$\alpha_3$",
+    "alpha_rho1": r"$m_l\ [\mathrm{kg\,m^{-3}}]$",
+    "alpha_rho2": r"$m_v\ [\mathrm{kg\,m^{-3}}]$",
+    "alpha_rho3": r"$m_g\ [\mathrm{kg\,m^{-3}}]$",
+    "Y1": r"$Y_l$",
+    "Y2": r"$Y_v$",
+    "Y3": r"$Y_g$",
+    "alpha1": r"$\alpha_l$",
+    "alpha2": r"$\alpha_v$",
+    "alpha3": r"$\alpha_g$",
     "pres": r"$p\ [\mathrm{Pa}]$",
     "vel1": r"$u\ [\mathrm{m\,s^{-1}}]$",
 }
@@ -54,7 +57,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
             "simulation case directory."
         )
     )
-    add_thesis_export_argument(parser, default_stem=THESIS_EXPORT_STEM)
+    add_thesis_export_argument(parser, default_stem=None)
     parser.add_argument(
         "--data-folder",
         type=Path,
@@ -62,12 +65,20 @@ def build_argument_parser() -> argparse.ArgumentParser:
         help="Path to the MFC case directory or directly to a snapshot directory.",
     )
     parser.add_argument(
+        "--case-label",
+        help=(
+            "Optional label used in the default title and thesis export stem. "
+            "If omitted, the script infers a label from the folder path, such "
+            "as ExpansionTube_pT or ExpansionTube_pTg."
+        ),
+    )
+    parser.add_argument(
         "--variables",
         nargs="+",
         default=list(DEFAULT_VARIABLES),
         help=(
-            "Snapshot variables to plot, for example pres vel1 alpha1 alpha2 alpha3 "
-            "or alpha_rho1 alpha_rho2 alpha_rho3."
+            "Snapshot variables to plot, for example Y1 Y2 Y3 pres vel1 or "
+            "alpha_rho1 alpha_rho2 alpha_rho3."
         ),
     )
     parser.add_argument(
@@ -106,6 +117,7 @@ def main(argv=None):
     args = build_argument_parser().parse_args(argv)
 
     snapshot_directory = discover_mfc_binary_snapshot_directory(args.data_folder)
+    case_label = args.case_label or _infer_case_label(snapshot_directory)
     available_steps = discover_mfc_binary_steps(snapshot_directory)
     selected_steps = _select_steps(
         available_steps,
@@ -120,6 +132,7 @@ def main(argv=None):
     figure = build_mfc_binary_quicklook_figure(
         snapshots,
         variables=args.variables,
+        case_label=case_label,
         title=args.title,
         thesis_mode=args.to_thesis,
         show_titles=not args.to_thesis,
@@ -134,11 +147,8 @@ def main(argv=None):
         figure.savefig(output_path, dpi=200)
         print(f"Figure written to {output_path}")
 
-    thesis_path = save_thesis_figure_from_args(
-        figure,
-        args,
-        stem=THESIS_EXPORT_STEM,
-    )
+    thesis_stem = args.thesis_stem or f"MFC_{case_label}_binary"
+    thesis_path = save_thesis_figure_from_args(figure, args, stem=thesis_stem)
     if thesis_path is not None:
         print(f"Thesis PDF written to {thesis_path}")
 
@@ -157,6 +167,7 @@ def build_mfc_binary_quicklook_figure(
     snapshots,
     *,
     variables: list[str] | tuple[str, ...],
+    case_label: str,
     title: str | None,
     thesis_mode: bool,
     show_titles: bool,
@@ -191,7 +202,7 @@ def build_mfc_binary_quicklook_figure(
     axes[-1, 0].set_xlabel(r"$x\ [\mathrm{m}]$")
 
     if title is None:
-        title = latex_text("MFC pT 5 equation binary quicklook")
+        title = latex_text(f"MFC {case_label} binary quicklook")
 
     if show_titles:
         figure.suptitle(_ensure_latex_title(title))
@@ -204,12 +215,7 @@ def build_mfc_binary_quicklook_figure(
 def _plot_variable_on_axis(axis, snapshots, reference_x, variable: str, colors):
     plotted_anything = False
     for color, snapshot in zip(colors, snapshots):
-        if variable not in snapshot.fields:
-            available = ", ".join(sorted(snapshot.fields))
-            raise ValueError(
-                f"Variable '{variable}' is not available in {snapshot.path.name}. "
-                f"Available fields: {available}"
-            )
+        values = resolve_mfc_binary_variable(snapshot, variable)
 
         if not np.allclose(snapshot.x_centers, reference_x):
             raise ValueError(
@@ -219,7 +225,7 @@ def _plot_variable_on_axis(axis, snapshots, reference_x, variable: str, colors):
 
         axis.plot(
             reference_x,
-            snapshot.fields[variable],
+            values,
             color=color,
             linewidth=2.0,
             label=latex_text(f"step {snapshot.step}"),
@@ -281,6 +287,20 @@ def _ensure_latex_title(title: str) -> str:
     if "$" in title:
         return title
     return latex_text(title)
+
+
+def _infer_case_label(snapshot_directory: Path) -> str:
+    resolved = Path(snapshot_directory).resolve()
+    parts = resolved.parts
+    for marker in ("5Eqn", "6Eqn"):
+        if marker in parts:
+            marker_index = parts.index(marker)
+            if marker_index >= 2:
+                return f"{parts[marker_index - 2]}_{parts[marker_index - 1]}"
+            break
+    if len(resolved.parents) >= 2:
+        return f"{resolved.parents[1].name}_{resolved.parents[0].name}"
+    return resolved.name
 
 
 if __name__ == "__main__":

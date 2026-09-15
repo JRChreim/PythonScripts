@@ -10,6 +10,8 @@ import numpy as np
 FORTRAN_RECORD_MARKER_SIZE = 4
 FIELD_NAME_BYTES = 50
 PARTITION_DIR_RE = re.compile(r"p\d+$")
+MASS_FRACTION_FIELDS = ("Y1", "Y2", "Y3")
+_MASS_FRACTION_SOURCE_FIELDS = ("alpha_rho1", "alpha_rho2", "alpha_rho3")
 
 
 @dataclass(frozen=True)
@@ -31,6 +33,30 @@ class MFCBinarySnapshot:
     @property
     def field_names(self) -> tuple[str, ...]:
         return tuple(self.fields.keys())
+
+
+def available_mfc_binary_variables(snapshot: MFCBinarySnapshot) -> tuple[str, ...]:
+    variables = list(snapshot.field_names)
+    if _can_compute_mass_fractions(snapshot):
+        for name in MASS_FRACTION_FIELDS:
+            if name not in variables:
+                variables.append(name)
+    return tuple(variables)
+
+
+def resolve_mfc_binary_variable(snapshot: MFCBinarySnapshot, variable: str) -> np.ndarray:
+    if variable in snapshot.fields:
+        return snapshot.fields[variable]
+
+    if variable in MASS_FRACTION_FIELDS:
+        mass_fractions = _compute_mass_fractions(snapshot)
+        return mass_fractions[MASS_FRACTION_FIELDS.index(variable)]
+
+    available = ", ".join(sorted(available_mfc_binary_variables(snapshot)))
+    raise ValueError(
+        f"Variable '{variable}' is not available in {snapshot.path.name}. "
+        f"Available fields: {available}"
+    )
 
 
 def discover_mfc_binary_snapshot_directory(base_folder: Path) -> Path:
@@ -113,6 +139,36 @@ def load_mfc_binary_snapshot(filepath: Path) -> MFCBinarySnapshot:
         x_faces=x_faces,
         fields=fields,
     )
+
+
+def _can_compute_mass_fractions(snapshot: MFCBinarySnapshot) -> bool:
+    return all(field_name in snapshot.fields for field_name in _MASS_FRACTION_SOURCE_FIELDS)
+
+
+def _compute_mass_fractions(snapshot: MFCBinarySnapshot) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    missing = [
+        field_name
+        for field_name in _MASS_FRACTION_SOURCE_FIELDS
+        if field_name not in snapshot.fields
+    ]
+    if missing:
+        raise ValueError(
+            f"Cannot compute mass fractions for {snapshot.path.name}; missing fields: "
+            f"{missing}"
+        )
+
+    m1 = np.asarray(snapshot.fields[_MASS_FRACTION_SOURCE_FIELDS[0]], dtype=float)
+    m2 = np.asarray(snapshot.fields[_MASS_FRACTION_SOURCE_FIELDS[1]], dtype=float)
+    m3 = np.asarray(snapshot.fields[_MASS_FRACTION_SOURCE_FIELDS[2]], dtype=float)
+    total = m1 + m2 + m3
+
+    if np.any(total == 0.0):
+        raise ValueError(
+            f"Cannot compute mass fractions for {snapshot.path.name}; the total "
+            "mass density is zero in at least one cell."
+        )
+
+    return (m1 / total, m2 / total, m3 / total)
 
 
 def _read_fortran_unformatted_records(filepath: Path) -> list[bytes]:

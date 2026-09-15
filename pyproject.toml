@@ -17,6 +17,8 @@ dependencies = [
 [project.scripts]
 ecogen-bd-analysis = "scripts.ecogen_bd_analysis:main"
 mfc-bd-analysis = "scripts.mfc_bd_analysis:main"
+mfc-bd-surface-thermo = "scripts.mfc_bd_surface_thermo:main"
+km-bd-surface-thermo = "scripts.km_bd_surface_thermo:main"
 mfc-binary-quicklook = "scripts.mfc_binary_quicklook:main"
 mfc-binary-comparison = "scripts.mfc_binary_comparison:main"
 mfc-binary-pressure-probe-timestep = "scripts.mfc_binary_pressure_probe_timestep:main"

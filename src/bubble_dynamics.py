@@ -20,6 +20,14 @@ class KellerMiksisCase:
     surface_tension: float = 72.8e-3
 
 
+KM_ISENTROPIC_HEAT_TRANSFER = 0.0
+KM_ISOTHERMAL_HEAT_TRANSFER = 20.0 * 4294967296.0e3
+KM_THEORY_CASES = (
+    (r"$\mathrm{Isentropic\ KM}$", KM_ISENTROPIC_HEAT_TRANSFER),
+    (r"$\mathrm{Isothermal\ KM}$", KM_ISOTHERMAL_HEAT_TRANSFER),
+)
+
+
 def normalize_radius_history(time_values, radius_values):
     time_values = np.asarray(time_values, dtype=float)
     radius_values = np.asarray(radius_values, dtype=float)
@@ -41,6 +49,39 @@ def normalize_radius_history(time_values, radius_values):
         raise ValueError("Collapse time cannot be zero.")
 
     return time_values / collapse_time, radius_values / initial_radius, collapse_time
+
+
+def compute_bubble_surface_pressure(case: KellerMiksisCase, radius_values, temperature_values):
+    """Return the uniform bubble-gas pressure history from the KM state."""
+
+    bubble_gas_constant = case.bubble_cp - case.bubble_cv
+    initial_volume = 4.0 / 3.0 * np.pi * case.initial_radius**3
+    bubble_mass = (
+        case.bubble_pressure
+        * initial_volume
+        / (bubble_gas_constant * case.bubble_temperature)
+    )
+    radius_values = np.asarray(radius_values, dtype=float)
+    temperature_values = np.asarray(temperature_values, dtype=float)
+    safe_radius_values = np.maximum(radius_values, case.initial_radius * 1.0e-6)
+    volume_values = 4.0 / 3.0 * np.pi * safe_radius_values**3
+    return bubble_mass * bubble_gas_constant * temperature_values / volume_values
+
+
+def build_keller_miksis_theory_histories(
+    case: KellerMiksisCase,
+    min_normalized_time_end: float | None = None,
+):
+    """Solve the isentropic and isothermal KM cases for a single setup."""
+
+    theory_histories = {}
+    for label, heat_transfer_coefficient in KM_THEORY_CASES:
+        theory_histories[label] = solve_keller_miksis(
+            case,
+            heat_transfer_coefficient,
+            min_normalized_time_end=min_normalized_time_end,
+        )
+    return theory_histories
 
 
 def solve_keller_miksis(
@@ -198,10 +239,18 @@ def solve_keller_miksis(
             normalized_time = time_values / collapse_time
             normalized_radius = radius_values / radius_values[0]
 
+    surface_pressure_values = compute_bubble_surface_pressure(
+        case,
+        radius_values,
+        temperature_values,
+    )
+
     return {
         "time": time_values,
         "radius": radius_values,
         "temperature": temperature_values,
+        "surface_temperature": temperature_values,
+        "surface_pressure": surface_pressure_values,
         "normalized_time": normalized_time,
         "normalized_radius": normalized_radius,
         "collapse_time": collapse_time,

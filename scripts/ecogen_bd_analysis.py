@@ -19,8 +19,8 @@ ensure_repo_root_on_path()
 
 from src.bubble_dynamics import (
     build_ecogen_strong_collapse_case,
+    build_keller_miksis_theory_histories,
     normalize_radius_history,
-    solve_keller_miksis,
 )
 from src.io.xyz import load_time_radius_history
 from src.plots.publication import (
@@ -166,17 +166,10 @@ def plot_radius_histories(
             )
 
     case = build_ecogen_strong_collapse_case()
-    theory_histories = {}
-    for label, heat_transfer_coefficient in (
-        (r"$\mathrm{Isentropic\ KM}$", 0.0),
-        (r"$\mathrm{Isothermal\ KM}$", 20.0 * 4294967296.0e3),
-    ):
-        theory = solve_keller_miksis(
-            case,
-            heat_transfer_coefficient,
-            min_normalized_time_end=simulation_end_time,
-        )
-        theory_histories[label] = theory
+    theory_histories = build_keller_miksis_theory_histories(
+        case,
+        min_normalized_time_end=simulation_end_time,
+    )
 
     km_envelope = build_km_envelope(theory_histories, time_limit=simulation_end_time)
     if km_envelope is not None:

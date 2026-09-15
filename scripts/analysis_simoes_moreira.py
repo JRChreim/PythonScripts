@@ -63,6 +63,8 @@ THESIS_ANNOTATION_FONT_SIZE = 11
 EXPERIMENT_LABEL = r"$\mathrm{Experimental}$"
 MODEL_5EQ_LABEL = r"$\mathrm{5\mbox{-}equation}$"
 MODEL_6EQ_LABEL = r"$\mathrm{6\mbox{-}equation}$"
+EXPERIMENT_COLOR = "#808080"
+NUMERICAL_COLOR = "#000000"
 ANNOTATION_BBOX = {
     "boxstyle": "round,pad=0.18",
     "facecolor": (1.0, 1.0, 1.0, 0.0),
@@ -404,7 +406,7 @@ def main(argv=None):
         _build_velocity_series(
             *load_two_column_csv(args.velocity_exp_input),
             label=EXPERIMENT_LABEL,
-            color="black",
+            color=EXPERIMENT_COLOR,
             marker="s",
             linestyle="None",
             markersize=exp_markersize,
@@ -414,22 +416,26 @@ def main(argv=None):
         _build_velocity_series(
             *load_two_column_csv(args.velocity_5eq_input),
             label=MODEL_5EQ_LABEL,
-            color="0.60",
-            marker="v",
+            color=NUMERICAL_COLOR,
+            marker="^",
             linestyle=(0, (4.0, 3.0)),
             markersize=model_markersize,
             linewidth=model_linewidth,
             zorder=3.0,
+            markerfacecolor="none",
+            markeredgewidth=1.5,
         ),
         _build_velocity_series(
             *load_two_column_csv(args.velocity_6eq_input),
             label=MODEL_6EQ_LABEL,
-            color="0.75",
-            marker="v",
+            color=NUMERICAL_COLOR,
+            marker="o",
             linestyle=(0, (4.0, 3.0)),
             markersize=model_markersize,
             linewidth=model_linewidth,
             zorder=2.0,
+            markerfacecolor="none",
+            markeredgewidth=1.5,
         ),
     ]
     figure, _ = build_analysis_figure(
@@ -480,6 +486,8 @@ def _build_velocity_series(
     markersize: float,
     linewidth: float,
     zorder: float,
+    markerfacecolor: str | None = None,
+    markeredgewidth: float = 0.8,
 ) -> dict[str, np.ndarray | str]:
     return {
         "temperature": temperature,
@@ -491,6 +499,8 @@ def _build_velocity_series(
         "markersize": markersize,
         "linewidth": linewidth,
         "zorder": zorder,
+        "markerfacecolor": color if markerfacecolor is None else markerfacecolor,
+        "markeredgewidth": markeredgewidth,
     }
 
 
