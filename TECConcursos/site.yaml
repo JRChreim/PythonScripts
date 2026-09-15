@@ -22,6 +22,7 @@ site:
       exact: true
       values:
         - "Princípios Contábeis"
+        - "Plano de Contas"
     "Banca":
       mode: search
       exact: true

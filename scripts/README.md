@@ -20,3 +20,4 @@ Current highlights:
 - `analysis_simoes_moreira.py`: plot the Simoes-Moreira density profile and `U_F` versus `T` in a 1x2 layout, with `--to-thesis` PDF export support
 - `stiffened_gas_eos.py`: reproduce the stiffened-gas EoS pressure-temperature, entropy, Gibbs, and saturation sweeps from the MATLAB script, with the `p-v` diagram as the default output and the auxiliary MATLAB-style figures available via `--all-figures`, plus `--to-thesis` PDF export support
 - `stiffened_gas_eos_water_air.py`: dedicated two-phase water/air variant of the stiffened-gas EoS figure using the parameter set that leaves the mixture region poorly defined, with the same `--all-figures` and `--to-thesis` support
+- `wood_speed_of_sound.py`: calculate liquid/gas stiffened-gas densities, phase sound speeds, and Wood mixture sound speed while sweeping `alpha_g` from 0 to 1

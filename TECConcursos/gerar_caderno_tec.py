@@ -14,8 +14,23 @@ REPO_ROOT = Path(__file__).resolve().parent
 DEFAULT_SITE_CONFIG_PATH = REPO_ROOT / "site.yaml"
 DEFAULT_CADERNOS_CONFIG_PATH = REPO_ROOT / "cadernos.yaml"
 
-LOGIN_EMAIL = os.environ.get("TEC_EMAIL", "jrchreim@outlook.com")
-LOGIN_PASSWORD = os.environ.get("TEC_PASSWORD", "Ana*120121")
+LOGIN_EMAIL = os.environ.get("TEC_EMAIL")
+LOGIN_PASSWORD = os.environ.get("TEC_PASSWORD")
+
+
+def validar_credenciais() -> None:
+    ausentes = []
+    if not LOGIN_EMAIL:
+        ausentes.append("TEC_EMAIL")
+    if not LOGIN_PASSWORD:
+        ausentes.append("TEC_PASSWORD")
+
+    if ausentes:
+        nomes = ", ".join(ausentes)
+        raise RuntimeError(
+            f"Defina {nomes} no ambiente antes de executar a automação. "
+            "Consulte TECConcursos/README.md para os comandos do seu sistema."
+        )
 
 
 def build_argument_parser() -> argparse.ArgumentParser:
@@ -209,15 +224,16 @@ def pesquisar_no_filtro_aberto(page, site: dict, termo: str):
     trigger_text = search_cfg["trigger_text"]
     textbox_name = search_cfg["textbox_name"]
 
-    pesquisar = page.locator(
-        "a.link-limpo:visible",
-        has_text=re.compile(re.escape(trigger_text)),
-    ).last
-
-    pesquisar.wait_for(state="visible", timeout=5000)
-    pesquisar.click()
-
     campo = page.get_by_role("textbox", name=textbox_name).last
+    if not campo.is_visible():
+        pesquisar = page.locator(
+            "a.link-limpo:visible",
+            has_text=re.compile(re.escape(trigger_text)),
+        ).last
+
+        pesquisar.wait_for(state="visible", timeout=5000)
+        pesquisar.click()
+
     campo.wait_for(state="visible", timeout=5000)
     campo.fill(termo)
 
@@ -227,8 +243,6 @@ def selecionar_valor_em_filtro(page, site: dict, nome_filtro: str, valor: str):
     filtro_cfg = filtros_cfg.get(nome_filtro)
     if filtro_cfg is None:
         raise ValueError(f"Filtro '{nome_filtro}' não está configurado em site.filters.")
-
-    abrir_filtro(page, nome_filtro)
 
     mode = filtro_cfg.get("mode", "click")
     exact = filtro_cfg.get("exact", True)
@@ -258,8 +272,12 @@ def aplicar_filtros(page, filtros: dict, site: dict):
                 f"Filtro '{nome_filtro}' não está configurado em site.filters."
             )
 
-        for valor in as_list(valores):
+        valores = as_list(valores)
+        for valor in valores:
             validar_valor_de_filtro(site, nome_filtro, valor)
+
+        abrir_filtro(page, nome_filtro)
+        for valor in valores:
             selecionar_valor_em_filtro(page, site, nome_filtro, valor)
 
 
@@ -375,6 +393,7 @@ def main(argv=None):
         listar_cadernos(config)
         return
 
+    validar_credenciais()
     caderno = selecionar_caderno(config, args.caderno)
 
     with sync_playwright() as playwright:
