@@ -1,11 +1,5 @@
 import argparse
-import os
 from pathlib import Path
-
-os.environ.setdefault(
-    "MPLCONFIGDIR",
-    str(Path(__file__).resolve().parents[1] / "artifacts" / ".matplotlib"),
-)
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,8 +14,8 @@ ensure_repo_root_on_path()
 
 from src.bubble_dynamics import (
     build_mfc_strong_collapse_case,
-    build_keller_miksis_theory_histories,
     normalize_radius_history,
+    solve_keller_miksis,
 )
 from src.io.xyz import load_time_radius_history
 from src.plots.publication import (
@@ -41,11 +35,6 @@ DEFAULT_DATA_FOLDER = Path(
     "/disk/simulations/Relaxation/BubbleCollapse/2D/Sphere/StrongCollapse/pT/6Eqn/Axisymmetric"
 )
 RESOLUTION_ORDER = ("N150E1", "N160E3", "N320E3", "N640E3", "N128E4", "N256E4")
-# Human-friendly labels for the refinement hierarchy shown in the figures.
-REFINEMENT_LEVEL_LABELS = {
-    resolution: f"L{index + 1}"
-    for index, resolution in enumerate(RESOLUTION_ORDER)
-}
 SERIES_COLORS = {
     ("6Eqn", "p"): "#0072B2",
     ("6Eqn", "pT"): "#000000",
@@ -54,7 +43,7 @@ SERIES_COLORS = {
 SERIES_MARKERS = {
     ("6Eqn", "p"): None,
     ("6Eqn", "pT"): "o",
-    ("5Eqn", "pT"): "^",
+    ("5Eqn", "pT"): "s",
 }
 
 BASE_LINEWIDTH = 2.0
@@ -65,11 +54,11 @@ KM_ENVELOPE_ALPHA = 0.35
 THESIS_EXPORT_STEM = "pTBD"
 THESIS_FIGURE_SIZE = thesis_figure_size(0.50)
 PUBLICATION_FIGURE_SIZE = (10, 5)
-DEFAULT_ZOOM_X_LIMITS = (0.98, 1.02)
-REFERENCE_ZOOM_X_LIMITS = (0.95, 1.05)
-REFERENCE_ZOOM_Y_LIMITS = (-0.05, 0.40)
+ZOOM_X_LIMITS = (0.95, 1.05)
+ZOOM_Y_LIMITS = (-0.05, 0.40)
 THESIS_MAIN_TITLE = r"$\mathrm{Strong\ collapse\ problem\ (MFC)}$"
 PUBLICATION_MAIN_TITLE = r"$\mathrm{Radial\ evolution,\ strong\ collapse\ problem\ (MFC)}$"
+ZOOM_PANEL_TITLE = r"$\mathrm{Zoom:}\ 0.85 \leq t/t_c \leq 1.15$"
 
 STYLES = {
     "N150E1": {"linestyle": "-"},
@@ -114,61 +103,11 @@ def get_series_marker(case_label: str, pressure_type: str):
 
 
 def build_series_label(case_label: str, pressure_type: str, resolution: str) -> str:
-    return rf"$\mathrm{{{case_label}\ {pressure_type}\ {get_refinement_label(resolution)}}}$"
+    return rf"$\mathrm{{{case_label}\ {pressure_type}\ {resolution}}}$"
 
 
 def build_series_type_label(case_label: str, pressure_type: str) -> str:
     return rf"$\mathrm{{{case_label}\ {pressure_type}}}$"
-
-
-def get_refinement_label(resolution: str) -> str:
-    return REFINEMENT_LEVEL_LABELS.get(resolution, resolution)
-
-
-def validate_limits(limits, *, label: str) -> tuple[float, float]:
-    lower, upper = (float(limits[0]), float(limits[1]))
-    if upper <= lower:
-        raise ValueError(f"{label} must satisfy lower < upper.")
-    return lower, upper
-
-
-def build_zoom_ylim(zoom_xlim: tuple[float, float]) -> tuple[float, float]:
-    zoom_xlim = validate_limits(zoom_xlim, label="zoom x-limits")
-    reference_xlim = validate_limits(
-        REFERENCE_ZOOM_X_LIMITS,
-        label="reference zoom x-limits",
-    )
-    reference_ylim = validate_limits(
-        REFERENCE_ZOOM_Y_LIMITS,
-        label="reference zoom y-limits",
-    )
-
-    x_span = zoom_xlim[1] - zoom_xlim[0]
-    reference_x_span = reference_xlim[1] - reference_xlim[0]
-    reference_y_span = reference_ylim[1] - reference_ylim[0]
-    y_span = x_span * (reference_y_span / reference_x_span)
-    y_center = 0.5 * (reference_ylim[0] + reference_ylim[1])
-    half_span = 0.5 * y_span
-    return (y_center - half_span, y_center + half_span)
-
-
-def resolve_zoom_limits(
-    zoom_xlim: tuple[float, float] | None,
-    zoom_ylim: tuple[float, float] | None,
-) -> tuple[tuple[float, float], tuple[float, float]]:
-    resolved_zoom_xlim = validate_limits(
-        DEFAULT_ZOOM_X_LIMITS if zoom_xlim is None else zoom_xlim,
-        label="zoom x-limits",
-    )
-    if zoom_ylim is None:
-        resolved_zoom_ylim = build_zoom_ylim(resolved_zoom_xlim)
-    else:
-        resolved_zoom_ylim = validate_limits(zoom_ylim, label="zoom y-limits")
-    return resolved_zoom_xlim, resolved_zoom_ylim
-
-
-def build_zoom_panel_title(zoom_xlim: tuple[float, float]) -> str:
-    return rf"$\mathrm{{Zoom:}}\ {zoom_xlim[0]:.2f} \leq t/t_c \leq {zoom_xlim[1]:.2f}$"
 
 
 def build_mfc_radius_history(filepath: Path):
@@ -215,25 +154,9 @@ def get_resolution_style(resolution: str):
     return FALLBACK_STYLES[fallback_index]
 
 
-def build_refinement_legend_handles(
-    radius_series,
-    *,
-    reference_pressure_type: str = "pT",
-):
+def build_resolution_legend_handles(radius_series):
     seen_resolutions = []
-
-    # Prefer the pT cases so the refinement ordering follows the pT sequence.
     for series in radius_series:
-        if series["pressure_type"] != reference_pressure_type:
-            continue
-        resolution = series["resolution"]
-        if resolution not in seen_resolutions:
-            seen_resolutions.append(resolution)
-
-    # Fall back to any remaining resolutions that are only present in other cases.
-    for series in radius_series:
-        if series["pressure_type"] == reference_pressure_type:
-            continue
         resolution = series["resolution"]
         if resolution not in seen_resolutions:
             seen_resolutions.append(resolution)
@@ -247,7 +170,7 @@ def build_refinement_legend_handles(
                 color="#404040",
                 linestyle=get_resolution_style(resolution)["linestyle"],
                 linewidth=PT_LINEWIDTH,
-                label=get_refinement_label(resolution),
+                label=resolution,
             )
         )
     return handles
@@ -276,9 +199,6 @@ def build_series_legend_handles(radius_series):
                 linestyle="-",
                 linewidth=PT_LINEWIDTH,
                 marker=get_series_marker(case_label, pressure_type),
-                markerfacecolor="none",
-                markeredgecolor=get_series_color(case_label, pressure_type),
-                markeredgewidth=1.5,
                 markersize=8,
                 label=build_series_type_label(case_label, pressure_type),
             )
@@ -289,16 +209,13 @@ def build_series_legend_handles(radius_series):
 def add_semantic_legends(axis, radius_series, *, thesis_mode: bool):
     legend_fontsize = max(7, THESIS_TICK_FONT_SIZE - 1) if thesis_mode else 8
 
-    refinement_handles = build_refinement_legend_handles(
-        radius_series,
-        reference_pressure_type="pT",
-    )
+    resolution_handles = build_resolution_legend_handles(radius_series)
     series_handles = build_series_legend_handles(radius_series)
 
-    if refinement_handles:
-        refinement_legend = axis.legend(
-            handles=refinement_handles,
-            title=r"$\mathrm{Refinement\ level}$",
+    if resolution_handles:
+        resolution_legend = axis.legend(
+            handles=resolution_handles,
+            title=r"$\mathrm{Resolution}$",
             loc="lower left",
             fontsize=legend_fontsize,
             title_fontsize=legend_fontsize,
@@ -307,7 +224,7 @@ def add_semantic_legends(axis, radius_series, *, thesis_mode: bool):
             handlelength=2.6,
             columnspacing=1.0,
         )
-        axis.add_artist(refinement_legend)
+        axis.add_artist(resolution_legend)
 
     if series_handles:
         axis.legend(
@@ -507,10 +424,17 @@ def load_radius_series_for_pressure(
 
 def build_theory_histories(simulation_end_time):
     case = build_mfc_strong_collapse_case()
-    return build_keller_miksis_theory_histories(
-        case,
-        min_normalized_time_end=simulation_end_time,
-    )
+    theory_histories = {}
+    for label, heat_transfer_coefficient in (
+        (r"$\mathrm{Isentropic\ KM}$", 0.0),
+        (r"$\mathrm{Isothermal\ KM}$", 20.0 * 4294967296.0e3),
+    ):
+        theory_histories[label] = solve_keller_miksis(
+            case,
+            heat_transfer_coefficient,
+            min_normalized_time_end=simulation_end_time,
+        )
+    return theory_histories
 
 
 def plot_radius_histories_on_axis(
@@ -533,9 +457,6 @@ def plot_radius_histories_on_axis(
             color=series["color"],
             linestyle=series["linestyle"],
             marker=series["marker"],
-            markerfacecolor="none",
-            markeredgecolor=series["color"],
-            markeredgewidth=1.5,
             markersize=10,
             markevery=60,
             linewidth=PT_LINEWIDTH,
@@ -679,31 +600,6 @@ def build_argument_parser() -> argparse.ArgumentParser:
         help="Load only these pT resolutions, after sorting by the canonical resolution order. The same list is used for both 6Eqn pT and 5Eqn pT; omit to load all available pT files.",
     )
     parser.add_argument(
-        "--zoom-xlimits",
-        dest="zoom_xlim",
-        nargs=2,
-        type=float,
-        metavar=("XMIN", "XMAX"),
-        default=None,
-        help=(
-            "Zoom-panel x-limits. Defaults to the focused [0.98, 1.02] window. "
-            "If --zoom-ylimits is omitted, the y-limits are derived to preserve "
-            "the reference zoom aspect ratio."
-        ),
-    )
-    parser.add_argument(
-        "--zoom-ylimits",
-        dest="zoom_ylim",
-        nargs=2,
-        type=float,
-        metavar=("YMIN", "YMAX"),
-        default=None,
-        help=(
-            "Optional zoom-panel y-limits. If omitted, the script derives them "
-            "from the x-limits to preserve the zoom aspect ratio."
-        ),
-    )
-    parser.add_argument(
         "--no-show",
         action="store_true",
         help="Build the plot without displaying the matplotlib window.",
@@ -718,8 +614,6 @@ def plot_radius_histories(
     p_resolutions: list[str] | None = None,
     pt_resolutions: list[str] | None = None,
     five_eqn_data_folder: Path | None = None,
-    zoom_xlim: tuple[float, float] | None = None,
-    zoom_ylim: tuple[float, float] | None = None,
 ):
     if thesis_mode:
         apply_thesis_style()
@@ -761,11 +655,7 @@ def plot_radius_histories(
 
     km_envelope = build_km_envelope(theory_histories, time_limit=simulation_end_time)
     main_title = THESIS_MAIN_TITLE if thesis_mode else PUBLICATION_MAIN_TITLE
-    resolved_zoom_xlim, resolved_zoom_ylim = resolve_zoom_limits(
-        zoom_xlim,
-        zoom_ylim,
-    )
-    zoom_title = build_zoom_panel_title(resolved_zoom_xlim)
+    zoom_title = ZOOM_PANEL_TITLE
 
     full_figure = create_radius_history_figure(
         radius_series,
@@ -784,8 +674,8 @@ def plot_radius_histories(
         km_envelope,
         thesis_mode=thesis_mode,
         title=zoom_title if show_titles else None,
-        zoom_xlim=resolved_zoom_xlim,
-        zoom_ylim=resolved_zoom_ylim,
+        zoom_xlim=ZOOM_X_LIMITS,
+        zoom_ylim=ZOOM_Y_LIMITS,
         show_legend=True,
         highlight_zoom=False,
     )
@@ -808,8 +698,6 @@ def main(argv=None):
         p_resolutions=args.p_resolutions,
         pt_resolutions=args.pt_resolutions,
         five_eqn_data_folder=five_eqn_data_folder,
-        zoom_xlim=args.zoom_xlim,
-        zoom_ylim=args.zoom_ylim,
     )
 
     if args.to_thesis:

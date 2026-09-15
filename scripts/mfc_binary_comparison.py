@@ -19,18 +19,15 @@ except ModuleNotFoundError:
 ensure_repo_root_on_path()
 
 from src.io.mfc_binary import (
-    available_mfc_binary_variables,
     discover_mfc_binary_snapshot_directory,
     discover_mfc_binary_steps,
     load_mfc_binary_snapshot,
-    resolve_mfc_binary_variable,
 )
 from src.plots.publication import (
     THESIS_TICK_FONT_SIZE,
     THESIS_TITLE_FONT_SIZE,
     add_thesis_export_argument,
     apply_thesis_style,
-    escape_latex_text,
     latex_text,
     save_thesis_figure_from_args,
     thesis_figure_size,
@@ -43,45 +40,33 @@ DEFAULT_FIVE_EQN_FOLDER = Path(
 DEFAULT_SIX_EQN_FOLDER = Path(
     "/disk/simulations/Relaxation/Thesis/ExpansionTube/pT/6Eqn/binary"
 )
-DEFAULT_COMPOSITION_MODE = "pair"
-COMPOSITION_MODE_PRESETS = {
-    "pair": {
-        "overview_variables": (
-            "alpha_rho1",
-            "alpha_rho2",
-            "alpha_rho3",
-            "pres",
-            "vel1",
-            "alpha1",
-            "alpha2",
-            "alpha3",
-        ),
-        "zoom_variables": ("pres", "vel1", "alpha_rho1", "alpha1"),
-        "output_subdir": None,
-        "thesis_suffix": None,
-    },
-    "yi": {
-        "overview_variables": ("Y1", "Y2", "Y3", "pres", "vel1"),
-        "zoom_variables": ("pres", "vel1", "Y1", "Y2"),
-        "output_subdir": "yi",
-        "thesis_suffix": "yi",
-    },
-}
+DEFAULT_VARIABLES = (
+    "alpha_rho1",
+    "alpha_rho2",
+    "alpha_rho3",
+    "pres",
+    "vel1",
+    "alpha1",
+    "alpha2",
+    "alpha3",
+)
 DEFAULT_OVERVIEW_PERCENTAGES = (0.0, 50.0, 100.0)
+DEFAULT_ZOOM_VARIABLES = ("pres", "vel1", "alpha_rho1", "alpha1")
 MODEL_STYLES = {
     "5Eqn": {"color": "#0072B2", "linestyle": "-", "linewidth": 1.7},
     "6Eqn": {"color": "#333333", "linestyle": "--", "linewidth": 1.7},
 }
+MODEL_LABELS = {
+    "5Eqn": r"$\mathrm{5\mbox{-}equation}$",
+    "6Eqn": r"$\mathrm{6\mbox{-}equation}$",
+}
 FIELD_LABELS = {
-    "alpha_rho1": r"$m_l\ [\mathrm{kg\,m^{-3}}]$",
-    "alpha_rho2": r"$m_v\ [\mathrm{kg\,m^{-3}}]$",
-    "alpha_rho3": r"$m_g\ [\mathrm{kg\,m^{-3}}]$",
-    "Y1": r"$Y_l$",
-    "Y2": r"$Y_v$",
-    "Y3": r"$Y_g$",
-    "alpha1": r"$\alpha_l$",
-    "alpha2": r"$\alpha_v$",
-    "alpha3": r"$\alpha_g$",
+    "alpha_rho1": r"$m_1\ [\mathrm{kg\,m^{-3}}]$",
+    "alpha_rho2": r"$m_2\ [\mathrm{kg\,m^{-3}}]$",
+    "alpha_rho3": r"$m_3\ [\mathrm{kg\,m^{-3}}]$",
+    "alpha1": r"$\alpha_1$",
+    "alpha2": r"$\alpha_2$",
+    "alpha3": r"$\alpha_3$",
     "pres": r"$p\ [\mathrm{Pa}]$",
     "vel1": r"$u\ [\mathrm{m\,s^{-1}}]$",
 }
@@ -134,64 +119,30 @@ class DifferenceSummary:
 def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Compare two MFC binary cases with matching saved-step grids."
+            "Compare 5Eqn and 6Eqn MFC binary outputs for a binary case."
         )
     )
     add_thesis_export_argument(parser, default_stem=None)
     parser.add_argument(
-        "--composition-mode",
-        choices=tuple(COMPOSITION_MODE_PRESETS.keys()),
-        default=DEFAULT_COMPOSITION_MODE,
-        help=(
-            "Choose the default composition panel set. 'pair' exports the "
-            "alpha_i and m_i panels. 'yi' exports only Y1, Y2, and Y3."
-        ),
-    )
-    parser.add_argument(
         "--five-eqn-folder",
-        "--first-folder",
-        dest="five_eqn_folder",
         type=Path,
         default=DEFAULT_FIVE_EQN_FOLDER,
-        help=(
-            "Path to the first case directory or its binary snapshot folder."
-        ),
+        help="Path to the 5Eqn case directory or its binary snapshot folder.",
     )
     parser.add_argument(
         "--six-eqn-folder",
-        "--second-folder",
-        dest="six_eqn_folder",
         type=Path,
         default=DEFAULT_SIX_EQN_FOLDER,
-        help=(
-            "Path to the second case directory or its binary snapshot folder."
-        ),
-    )
-    parser.add_argument(
-        "--five-eqn-label",
-        "--first-label",
-        dest="five_eqn_label",
-        help=(
-            "Label used for the first case in legends, titles, and summary "
-            "tables. For example, pT, pTg, or pT\\mu."
-        ),
-    )
-    parser.add_argument(
-        "--six-eqn-label",
-        "--second-label",
-        dest="six_eqn_label",
-        help=(
-            "Label used for the second case in legends, titles, and summary "
-            "tables. For example, pT, pTg, or pT\\mu."
-        ),
+        help="Path to the 6Eqn case directory or its binary snapshot folder.",
     )
     parser.add_argument(
         "--variables",
         nargs="+",
-        default=None,
+        default=list(DEFAULT_VARIABLES),
         help=(
             "Variables to show in the overview figure. The default set includes "
-            "the variables selected by --composition-mode."
+            "m_1, m_2, m_3, pres, vel1, alpha1, alpha2, "
+            "and alpha3."
         ),
     )
     parser.add_argument(
@@ -237,8 +188,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
         type=Path,
         help=(
             "Optional path to save the overview figure. Defaults to a "
-            "case-organized folder under artifacts/figures/mfc/<tube>/<mode>/ "
-            "(with a composition subfolder for --composition-mode yi) unless "
+            "case-organized folder under artifacts/figures/mfc/<tube>/<mode>/ unless "
             "--to-thesis is used."
         ),
     )
@@ -263,8 +213,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
         help=(
             "Optional label used to distinguish output filenames and thesis "
             "exports. If omitted, the script infers a label from the folder "
-            "paths, such as ExpansionTube_pT, ShockTube_pTg, or "
-            "ExpansionTube_pTxpTg for mixed comparisons."
+            "path, such as ExpansionTube_pT or ShockTube_pTg."
         ),
     )
     parser.add_argument(
@@ -285,32 +234,12 @@ def main(argv=None):
     if args.steps is not None and args.percentages is not None:
         raise ValueError("Specify either --steps or --percentages, not both.")
 
-    composition_defaults = COMPOSITION_MODE_PRESETS[args.composition_mode]
-    overview_variables = (
-        tuple(args.variables)
-        if args.variables is not None
-        else composition_defaults["overview_variables"]
-    )
-    zoom_variables = composition_defaults["zoom_variables"]
-
     five_eqn_directory = discover_mfc_binary_snapshot_directory(args.five_eqn_folder)
     six_eqn_directory = discover_mfc_binary_snapshot_directory(args.six_eqn_folder)
-    first_case_label = _infer_case_label(five_eqn_directory)
-    second_case_label = _infer_case_label(six_eqn_directory)
-    case_label = args.case_label or _infer_comparison_case_label(
-        first_case_label,
-        second_case_label,
-    )
-    five_eqn_label = args.five_eqn_label or "5Eqn"
-    six_eqn_label = args.six_eqn_label or "6Eqn"
-    thesis_stem = args.thesis_stem or _build_thesis_stem(
-        case_label=case_label,
-        five_eqn_label=five_eqn_label,
-        six_eqn_label=six_eqn_label,
-        composition_mode=args.composition_mode,
-    )
+    case_label = args.case_label or _infer_case_label(five_eqn_directory)
+    thesis_stem = args.thesis_stem or f"MFC_{case_label}_5Eqn_vs_6Eqn"
     default_overview_output, default_zoom_output, default_summary_output = (
-        _build_default_output_paths(case_label, args.composition_mode)
+        _build_default_output_paths(case_label)
     )
     manual_zoom_xlim = None
     if args.zoom_xlimits is not None:
@@ -321,7 +250,7 @@ def main(argv=None):
 
     shared_steps = _discover_shared_steps(five_eqn_directory, six_eqn_directory)
     if not shared_steps:
-        raise ValueError("The selected cases do not share any saved steps.")
+        raise ValueError("The 5Eqn and 6Eqn cases do not share any saved steps.")
 
     comparison_summary = _build_difference_summary(
         five_eqn_directory,
@@ -338,7 +267,7 @@ def main(argv=None):
     selected_steps = [selection.step for selection in selected_snapshots]
     zoom_steps = [
         comparison_summary[variable].step
-        for variable in zoom_variables
+        for variable in DEFAULT_ZOOM_VARIABLES
         if variable in comparison_summary
     ]
     loaded_steps = sorted(dict.fromkeys(selected_steps + zoom_steps))
@@ -354,30 +283,26 @@ def main(argv=None):
     }
 
     _validate_selected_steps(shared_steps, selected_steps)
-    _validate_variables(loaded_cases, overview_variables)
+    _validate_variables(loaded_cases, args.variables)
 
     show_titles = not args.to_thesis
     overview_figure = build_overview_figure(
         loaded_cases,
         selected_snapshots=selected_snapshots,
-        variables=overview_variables,
-        case_labels=(five_eqn_label, six_eqn_label),
+        variables=args.variables,
         title=args.title,
         show_titles=show_titles,
     )
     zoom_figure = build_zoom_figure(
         loaded_cases,
         comparison_summary,
-        variables=zoom_variables,
-        case_labels=(five_eqn_label, six_eqn_label),
+        variables=DEFAULT_ZOOM_VARIABLES,
         zoom_xlim=manual_zoom_xlim,
         inset_location=args.inset_location,
         show_titles=show_titles,
     )
     summary_figure = build_summary_table_figure(
         comparison_summary,
-        variables=overview_variables,
-        case_labels=(five_eqn_label, six_eqn_label),
         show_titles=show_titles,
     )
 
@@ -447,11 +372,7 @@ def main(argv=None):
     if thesis_summary_path is not None:
         print(f"Thesis summary PDF written to {thesis_summary_path}")
 
-    _print_difference_summary(
-        comparison_summary,
-        overview_variables,
-        case_labels=(five_eqn_label, six_eqn_label),
-    )
+    _print_difference_summary(comparison_summary, args.variables)
     print(
         "Shared saved steps: "
         f"{len(shared_steps)}; plotted overview snapshots: "
@@ -471,7 +392,6 @@ def build_overview_figure(
     *,
     selected_snapshots: list[SnapshotSelection] | tuple[SnapshotSelection, ...],
     variables: list[str] | tuple[str, ...],
-    case_labels: tuple[str, str],
     title: str | None,
     show_titles: bool,
 ):
@@ -498,7 +418,6 @@ def build_overview_figure(
                 five_eqn,
                 six_eqn,
                 variable,
-                case_labels=case_labels,
             )
             if show_titles and row_index == 0:
                 axis.set_title(
@@ -511,8 +430,9 @@ def build_overview_figure(
                 axis.set_xlabel(r"$x\ [\mathrm{m}]$")
             axis.grid(True, alpha=0.35)
 
+    legend_handles = _build_model_legend_handles()
     figure.legend(
-        handles=_build_model_legend_handles(case_labels),
+        handles=legend_handles,
         loc="upper center",
         ncol=2,
         frameon=True,
@@ -520,11 +440,7 @@ def build_overview_figure(
     )
 
     if show_titles:
-        default_title = _build_case_title(
-            case_labels[0],
-            case_labels[1],
-            "binary comparison",
-        )
+        default_title = latex_text("MFC 5Eqn vs 6Eqn binary comparison")
         figure.suptitle(_ensure_latex_title(title or default_title), y=0.985)
         figure.tight_layout(rect=(0.0, 0.0, 1.0, 0.90))
     else:
@@ -538,7 +454,6 @@ def build_zoom_figure(
     summary: dict[str, DifferenceSummary],
     *,
     variables: list[str] | tuple[str, ...],
-    case_labels: tuple[str, str],
     zoom_xlim: tuple[float, float] | None,
     inset_location: str,
     show_titles: bool,
@@ -570,7 +485,6 @@ def build_zoom_figure(
             five_eqn,
             six_eqn,
             variable,
-            case_labels=case_labels,
             focus_x=stats.x,
             zoom_xlim=zoom_xlim,
             inset_location=inset_location,
@@ -589,7 +503,7 @@ def build_zoom_figure(
         axis.set_visible(False)
 
     figure.legend(
-        handles=_build_model_legend_handles(case_labels),
+        handles=_build_model_legend_handles(),
         loc="upper center",
         ncol=2,
         frameon=True,
@@ -597,14 +511,7 @@ def build_zoom_figure(
     )
 
     if show_titles:
-        figure.suptitle(
-            _build_case_title(
-                case_labels[0],
-                case_labels[1],
-                "zoom comparison",
-            ),
-            y=0.985,
-        )
+        figure.suptitle(latex_text("MFC 5Eqn vs 6Eqn zoom comparison"), y=0.985)
         figure.subplots_adjust(
             left=0.11,
             right=0.985,
@@ -629,8 +536,6 @@ def build_zoom_figure(
 def build_summary_table_figure(
     summary: dict[str, DifferenceSummary],
     *,
-    variables: list[str] | tuple[str, ...],
-    case_labels: tuple[str, str],
     show_titles: bool,
 ):
     apply_thesis_style()
@@ -639,10 +544,7 @@ def build_summary_table_figure(
     axis.axis("off")
 
     table_rows = []
-    for field in variables:
-        if field not in summary:
-            continue
-        stats = summary[field]
+    for field, stats in summary.items():
         table_rows.append(
             [
                 _build_variable_label(field),
@@ -663,8 +565,8 @@ def build_summary_table_figure(
             "normalized",
             latex_text("sim %"),
             "x [m]",
-            _format_case_label_for_display(case_labels[0]),
-            _format_case_label_for_display(case_labels[1]),
+            "5Eqn",
+            "6Eqn",
         ],
         cellLoc="center",
         loc="center",
@@ -675,11 +577,7 @@ def build_summary_table_figure(
 
     if show_titles:
         figure.suptitle(
-            _build_case_title(
-                case_labels[0],
-                case_labels[1],
-                "summary table",
-            ),
+            latex_text("MFC 5Eqn vs 6Eqn summary table"),
             y=0.985,
         )
         figure.tight_layout(rect=(0.0, 0.0, 1.0, 0.94))
@@ -694,28 +592,34 @@ def _plot_variable_comparison_on_axis(
     five_eqn_snapshot,
     six_eqn_snapshot,
     variable: str,
-    *,
-    case_labels: tuple[str, str],
 ):
-    if not np.allclose(five_eqn_snapshot.x_centers, six_eqn_snapshot.x_centers):
+    if variable not in five_eqn_snapshot.fields:
+        available = ", ".join(sorted(five_eqn_snapshot.fields))
         raise ValueError(
-            f"The {case_labels[0]} and {case_labels[1]} snapshots do not share "
-            "the same x-grid."
+            f"Variable '{variable}' is not available in {five_eqn_snapshot.path.name}. "
+            f"Available fields: {available}"
+        )
+    if variable not in six_eqn_snapshot.fields:
+        available = ", ".join(sorted(six_eqn_snapshot.fields))
+        raise ValueError(
+            f"Variable '{variable}' is not available in {six_eqn_snapshot.path.name}. "
+            f"Available fields: {available}"
         )
 
+    if not np.allclose(five_eqn_snapshot.x_centers, six_eqn_snapshot.x_centers):
+        raise ValueError("The 5Eqn and 6Eqn snapshots do not share the same x-grid.")
+
     x_centers = five_eqn_snapshot.x_centers
-    values_5eqn = resolve_mfc_binary_variable(five_eqn_snapshot, variable)
-    values_6eqn = resolve_mfc_binary_variable(six_eqn_snapshot, variable)
     axis.plot(
         x_centers,
-        values_5eqn,
-        label=_format_case_label_for_display(case_labels[0]),
+        five_eqn_snapshot.fields[variable],
+        label=MODEL_LABELS["5Eqn"],
         **MODEL_STYLES["5Eqn"],
     )
     axis.plot(
         x_centers,
-        values_6eqn,
-        label=_format_case_label_for_display(case_labels[1]),
+        six_eqn_snapshot.fields[variable],
+        label=MODEL_LABELS["6Eqn"],
         **MODEL_STYLES["6Eqn"],
     )
     _apply_scientific_y_formatter(axis)
@@ -727,30 +631,39 @@ def _plot_zoom_panel(
     six_eqn_snapshot,
     variable: str,
     *,
-    case_labels: tuple[str, str],
     focus_x: float,
     zoom_xlim: tuple[float, float] | None,
     inset_location: str,
 ):
-    if not np.allclose(five_eqn_snapshot.x_centers, six_eqn_snapshot.x_centers):
+    if variable not in five_eqn_snapshot.fields:
+        available = ", ".join(sorted(five_eqn_snapshot.fields))
         raise ValueError(
-            f"The {case_labels[0]} and {case_labels[1]} snapshots do not share "
-            "the same x-grid."
+            f"Variable '{variable}' is not available in {five_eqn_snapshot.path.name}. "
+            f"Available fields: {available}"
+        )
+    if variable not in six_eqn_snapshot.fields:
+        available = ", ".join(sorted(six_eqn_snapshot.fields))
+        raise ValueError(
+            f"Variable '{variable}' is not available in {six_eqn_snapshot.path.name}. "
+            f"Available fields: {available}"
         )
 
+    if not np.allclose(five_eqn_snapshot.x_centers, six_eqn_snapshot.x_centers):
+        raise ValueError("The 5Eqn and 6Eqn snapshots do not share the same x-grid.")
+
     x_centers = five_eqn_snapshot.x_centers
-    values_5eqn = resolve_mfc_binary_variable(five_eqn_snapshot, variable)
-    values_6eqn = resolve_mfc_binary_variable(six_eqn_snapshot, variable)
+    values_5eqn = five_eqn_snapshot.fields[variable]
+    values_6eqn = six_eqn_snapshot.fields[variable]
     axis.plot(
         x_centers,
         values_5eqn,
-        label=_format_case_label_for_display(case_labels[0]),
+        label=MODEL_LABELS["5Eqn"],
         **MODEL_STYLES["5Eqn"],
     )
     axis.plot(
         x_centers,
         values_6eqn,
-        label=_format_case_label_for_display(case_labels[1]),
+        label=MODEL_LABELS["6Eqn"],
         **MODEL_STYLES["6Eqn"],
     )
 
@@ -767,18 +680,8 @@ def _plot_zoom_panel(
         loc=_resolve_inset_location(inset_location),
         borderpad=INSET_BORDERPAD,
     )
-    inset_axis.plot(
-        x_centers,
-        values_5eqn,
-        label=_format_case_label_for_display(case_labels[0]),
-        **MODEL_STYLES["5Eqn"],
-    )
-    inset_axis.plot(
-        x_centers,
-        values_6eqn,
-        label=_format_case_label_for_display(case_labels[1]),
-        **MODEL_STYLES["6Eqn"],
-    )
+    inset_axis.plot(x_centers, values_5eqn, **MODEL_STYLES["5Eqn"])
+    inset_axis.plot(x_centers, values_6eqn, **MODEL_STYLES["6Eqn"])
     inset_axis.set_xlim(*zoom_xlim)
     inset_axis.set_ylim(*zoom_ylim)
     inset_axis.tick_params(
@@ -864,7 +767,7 @@ def _build_difference_summary(
     simulation_end_step = shared_steps[-1]
 
     reference_snapshot = load_mfc_binary_snapshot(five_eqn_directory / f"{shared_steps[0]}.dat")
-    fields = available_mfc_binary_variables(reference_snapshot)
+    fields = reference_snapshot.field_names
 
     for field in fields:
         summary[field] = DifferenceSummary(
@@ -872,8 +775,8 @@ def _build_difference_summary(
             step=shared_steps[0],
             percent=_step_to_percent(shared_steps[0], simulation_end_step),
             x=float(reference_snapshot.x_centers[0]),
-            value_5eqn=float(resolve_mfc_binary_variable(reference_snapshot, field)[0]),
-            value_6eqn=float(resolve_mfc_binary_variable(reference_snapshot, field)[0]),
+            value_5eqn=float(reference_snapshot.fields[field][0]),
+            value_6eqn=float(reference_snapshot.fields[field][0]),
             field_scale=0.0,
         )
 
@@ -891,8 +794,8 @@ def _build_difference_summary(
             raise ValueError(f"x-grid mismatch at step {step}.")
 
         for field in fields:
-            values_5eqn = resolve_mfc_binary_variable(five_eqn_snapshot, field)
-            values_6eqn = resolve_mfc_binary_variable(six_eqn_snapshot, field)
+            values_5eqn = five_eqn_snapshot.fields[field]
+            values_6eqn = six_eqn_snapshot.fields[field]
             field_scales[field] = max(
                 field_scales.get(field, 0.0),
                 float(np.max(np.abs(values_5eqn))),
@@ -942,58 +845,8 @@ def _infer_case_label(snapshot_directory: Path) -> str:
     return resolved.name
 
 
-def _infer_comparison_case_label(first_case_label: str, second_case_label: str) -> str:
-    if first_case_label == second_case_label:
-        return first_case_label
-
-    first_family, first_separator, first_mode = first_case_label.partition("_")
-    second_family, second_separator, second_mode = second_case_label.partition("_")
-    if first_separator and second_separator and first_family == second_family:
-        if first_mode == second_mode:
-            return first_case_label
-        return f"{first_family}_{first_mode}x{second_mode}"
-
-    return f"{first_case_label}_vs_{second_case_label}"
-
-
-def _slugify_filename_component(text: str) -> str:
-    pieces: list[str] = []
-    previous_was_separator = False
-    for character in str(text):
-        if character.isalnum():
-            pieces.append(character)
-            previous_was_separator = False
-        elif not previous_was_separator:
-            pieces.append("_")
-            previous_was_separator = True
-    return "".join(pieces).strip("_") or "case"
-
-
-def _build_thesis_stem(
-    *,
-    case_label: str,
-    five_eqn_label: str,
-    six_eqn_label: str,
-    composition_mode: str,
-) -> str:
-    thesis_stem = (
-        f"MFC_{case_label}_{_slugify_filename_component(five_eqn_label)}"
-        f"_vs_{_slugify_filename_component(six_eqn_label)}"
-    )
-    mode_suffix = COMPOSITION_MODE_PRESETS[composition_mode]["thesis_suffix"]
-    if mode_suffix is not None:
-        thesis_stem = f"{thesis_stem}_{mode_suffix}"
-    return thesis_stem
-
-
-def _build_default_output_paths(
-    case_label: str,
-    composition_mode: str,
-) -> tuple[Path, Path, Path]:
+def _build_default_output_paths(case_label: str) -> tuple[Path, Path, Path]:
     figures_dir = _build_case_output_directory(case_label)
-    output_subdir = COMPOSITION_MODE_PRESETS[composition_mode]["output_subdir"]
-    if output_subdir is not None:
-        figures_dir = figures_dir / output_subdir
     overview = figures_dir / "overview.png"
     zoom = figures_dir / "zoom.png"
     summary = figures_dir / "summary.png"
@@ -1094,7 +947,7 @@ def _validate_selected_steps(shared_steps: list[int], selected_steps: list[int])
 
 def _validate_variables(loaded_cases: dict[str, dict[int, object]], variables):
     reference_snapshot = next(iter(loaded_cases["5Eqn"].values()))
-    available_fields = set(available_mfc_binary_variables(reference_snapshot))
+    available_fields = set(reference_snapshot.field_names)
     missing = [variable for variable in variables if variable not in available_fields]
     if missing:
         raise ValueError(
@@ -1107,56 +960,24 @@ def _build_variable_label(variable: str) -> str:
     return FIELD_LABELS.get(variable, latex_text(variable))
 
 
-def _format_case_label_for_display(label: str) -> str:
-    return rf"$\mathrm{{{_format_case_label_body(label)}}}$"
-
-
-def _format_case_label_body(label: str) -> str:
-    if "\\" in label:
-        return label
-    return escape_latex_text(label)
-
-
-def _build_case_title(first_label: str, second_label: str, suffix: str) -> str:
-    return (
-        rf"$\mathrm{{MFC}}\ \mathrm{{{_format_case_label_body(first_label)}}}\ "
-        rf"\mathrm{{vs}}\ "
-        rf"\mathrm{{{_format_case_label_body(second_label)}}}\ "
-        rf"\mathrm{{{escape_latex_text(suffix)}}}$"
-    )
-
-
 def _build_difference_label(variable: str) -> str:
     labels = {
-        "alpha_rho1": r"$\Delta m_l\ [\mathrm{kg\,m^{-3}}]$",
-        "alpha_rho2": r"$\Delta m_v\ [\mathrm{kg\,m^{-3}}]$",
-        "alpha_rho3": r"$\Delta m_g\ [\mathrm{kg\,m^{-3}}]$",
-        "Y1": r"$\Delta Y_l$",
-        "Y2": r"$\Delta Y_v$",
-        "Y3": r"$\Delta Y_g$",
-        "alpha1": r"$\Delta \alpha_l$",
-        "alpha2": r"$\Delta \alpha_v$",
-        "alpha3": r"$\Delta \alpha_g$",
+        "alpha_rho1": r"$\Delta m_1\ [\mathrm{kg\,m^{-3}}]$",
+        "alpha_rho2": r"$\Delta m_2\ [\mathrm{kg\,m^{-3}}]$",
+        "alpha_rho3": r"$\Delta m_3\ [\mathrm{kg\,m^{-3}}]$",
+        "alpha1": r"$\Delta \alpha_1$",
+        "alpha2": r"$\Delta \alpha_2$",
+        "alpha3": r"$\Delta \alpha_3$",
         "pres": r"$\Delta p\ [\mathrm{Pa}]$",
         "vel1": r"$\Delta u\ [\mathrm{m\,s^{-1}}]$",
     }
     return labels.get(variable, latex_text(f"delta {variable}"))
 
 
-def _build_model_legend_handles(case_labels: tuple[str, str]):
+def _build_model_legend_handles():
     return [
-        Line2D(
-            [0],
-            [0],
-            label=_format_case_label_for_display(case_labels[0]),
-            **MODEL_STYLES["5Eqn"],
-        ),
-        Line2D(
-            [0],
-            [0],
-            label=_format_case_label_for_display(case_labels[1]),
-            **MODEL_STYLES["6Eqn"],
-        ),
+        Line2D([0], [0], label=MODEL_LABELS["5Eqn"], **MODEL_STYLES["5Eqn"]),
+        Line2D([0], [0], label=MODEL_LABELS["6Eqn"], **MODEL_STYLES["6Eqn"]),
     ]
 
 
@@ -1282,19 +1103,20 @@ def _step_to_percent(step: int, simulation_end_step: int) -> float:
 def _print_difference_summary(
     summary: dict[str, DifferenceSummary],
     plotted_variables: list[str] | tuple[str, ...],
-    *,
-    case_labels: tuple[str, str],
 ):
     print("Comparison summary:")
-    for field in plotted_variables:
-        if field not in summary:
+    for field in summary:
+        if field not in plotted_variables and field not in (
+            "alpha_rho1",
+            "alpha_rho2",
+            "alpha_rho3",
+        ):
             continue
         stats = summary[field]
         print(
             f"  - {field}: max |Δ| = {stats.max_abs:g} at "
             f"{stats.percent:g}% of simulation (x = {stats.x:g} m; "
-            f"{case_labels[0]} = {stats.value_5eqn:g}; "
-            f"{case_labels[1]} = {stats.value_6eqn:g}; "
+            f"5Eqn = {stats.value_5eqn:g}; 6Eqn = {stats.value_6eqn:g}; "
             f"normalized = {stats.normalized_max_abs:g})"
         )
 

@@ -34,6 +34,14 @@ DEFAULT_DENSITY_INPUT = DATA_DIR / "RhoVSx.csv"
 DEFAULT_VELOCITY_5EQ_INPUT = DATA_DIR / "UxT_5Eq.csv"
 DEFAULT_VELOCITY_6EQ_INPUT = DATA_DIR / "UxT_6Eq.csv"
 DEFAULT_VELOCITY_EXP_INPUT = DATA_DIR / "UxT_Exp.csv"
+DEFAULT_VELOCITY_PELANTI_INPUT = DATA_DIR / "Pelanti2002.csv"
+DEFAULT_VELOCITY_RODIO_ABGRALL_INPUT = DATA_DIR / "RodioAbgrall2015.csv"
+DEFAULT_VELOCITY_SAUREL_PETITPAS_ABGRALL_INPUT = (
+    DATA_DIR / "SaurelPetitpasAbgrall2008.csv"
+)
+DEFAULT_VELOCITY_ZEIN_HANTKE_WARNECKE_INPUT = (
+    DATA_DIR / "ZeinHantkeWarnecke2010.csv"
+)
 THESIS_EXPORT_STEM = "NDodecane"
 DEFAULT_OUTPUT = None
 DEFAULT_X_MIN = 0.4
@@ -43,7 +51,7 @@ DEFAULT_HIGHLIGHT_END = 0.783
 DEFAULT_T_MIN = 450.0
 DEFAULT_T_MAX = 600.0
 DEFAULT_UF_MIN = 0.0
-DEFAULT_UF_MAX = 1.8
+DEFAULT_UF_MAX = 2.0
 FIGURE_SIZE = (15.8, 6.1)
 THESIS_FIGURE_SIZE = thesis_figure_size(0.55)
 WIDTH_RATIOS = (1.0, 1.0)
@@ -61,10 +69,12 @@ THESIS_MODEL_MARKERSIZE = 6.5
 THESIS_MODEL_LINEWIDTH = 0.8
 THESIS_ANNOTATION_FONT_SIZE = 11
 EXPERIMENT_LABEL = r"$\mathrm{Experimental}$"
-MODEL_5EQ_LABEL = r"$\mathrm{5\mbox{-}equation}$"
-MODEL_6EQ_LABEL = r"$\mathrm{6\mbox{-}equation}$"
-EXPERIMENT_COLOR = "#808080"
-NUMERICAL_COLOR = "#000000"
+MODEL_5EQ_LABEL = r"$\mathrm{5\!-\!equation}$"
+MODEL_6EQ_LABEL = r"$\mathrm{6\!-\!equation}$"
+PELANTI_LABEL = r"$\mathrm{Pelanti\ (2022)}$"
+RODIO_ABGRALL_LABEL = r"$\mathrm{Rodio\!-\!Abgrall\ (2015)}$"
+SAUREL_PETITPAS_ABGRALL_LABEL = r"$\mathrm{Saurel\ et\ al.\ (2008)}$"
+ZEIN_HANTKE_WARNECKE_LABEL = r"$\mathrm{Zein\ et\ al.\ (2010)}$"
 ANNOTATION_BBOX = {
     "boxstyle": "round,pad=0.18",
     "facecolor": (1.0, 1.0, 1.0, 0.0),
@@ -111,6 +121,39 @@ def build_argument_parser() -> argparse.ArgumentParser:
         type=Path,
         default=DEFAULT_VELOCITY_EXP_INPUT,
         help="Two-column CSV file containing T [K] and U_F [m/s] for the experimental data.",
+    )
+    parser.add_argument(
+        "--velocity-pelanti-input",
+        type=Path,
+        default=DEFAULT_VELOCITY_PELANTI_INPUT,
+        help="Two-column CSV file containing T [K] and U_F [m/s] from Pelanti (2022).",
+    )
+    parser.add_argument(
+        "--velocity-rodio-abgrall-input",
+        type=Path,
+        default=DEFAULT_VELOCITY_RODIO_ABGRALL_INPUT,
+        help=(
+            "Two-column CSV file containing T [K] and U_F [m/s] from "
+            "Rodio and Abgrall (2015)."
+        ),
+    )
+    parser.add_argument(
+        "--velocity-saurel-petitpas-abgrall-input",
+        type=Path,
+        default=DEFAULT_VELOCITY_SAUREL_PETITPAS_ABGRALL_INPUT,
+        help=(
+            "Two-column CSV file containing T [K] and U_F [m/s] from "
+            "Saurel, Petitpas, and Abgrall (2008)."
+        ),
+    )
+    parser.add_argument(
+        "--velocity-zein-hantke-warnecke-input",
+        type=Path,
+        default=DEFAULT_VELOCITY_ZEIN_HANTKE_WARNECKE_INPUT,
+        help=(
+            "Two-column CSV file containing T [K] and U_F [m/s] from "
+            "Zein, Hantke, and Warnecke (2010)."
+        ),
     )
     parser.add_argument(
         "--output",
@@ -350,7 +393,7 @@ def _add_region_annotations(
         zorder=3.0,
     )
     axis.annotate(
-        r"$\begin{array}{c}\mathrm{Evaporation}\\\mathrm{wave}\end{array}$",
+        "$\\mathrm{Evaporation}$\n$\\mathrm{wave}$",
         xy=(highlight_mid, 2.5),
         xytext=(0.84, 100.0),
         textcoords="data",
@@ -406,7 +449,7 @@ def main(argv=None):
         _build_velocity_series(
             *load_two_column_csv(args.velocity_exp_input),
             label=EXPERIMENT_LABEL,
-            color=EXPERIMENT_COLOR,
+            color="black",
             marker="s",
             linestyle="None",
             markersize=exp_markersize,
@@ -416,26 +459,70 @@ def main(argv=None):
         _build_velocity_series(
             *load_two_column_csv(args.velocity_5eq_input),
             label=MODEL_5EQ_LABEL,
-            color=NUMERICAL_COLOR,
-            marker="^",
+            color="0.60",
+            marker="v",
             linestyle=(0, (4.0, 3.0)),
             markersize=model_markersize,
             linewidth=model_linewidth,
             zorder=3.0,
-            markerfacecolor="none",
-            markeredgewidth=1.5,
         ),
         _build_velocity_series(
             *load_two_column_csv(args.velocity_6eq_input),
             label=MODEL_6EQ_LABEL,
-            color=NUMERICAL_COLOR,
-            marker="o",
+            color="0.75",
+            marker="v",
             linestyle=(0, (4.0, 3.0)),
             markersize=model_markersize,
             linewidth=model_linewidth,
             zorder=2.0,
-            markerfacecolor="none",
-            markeredgewidth=1.5,
+        ),
+        _build_velocity_series(
+            *load_two_column_csv(args.velocity_pelanti_input),
+            label=PELANTI_LABEL,
+            color="#0072B2",
+            marker="o",
+            linestyle="-",
+            markersize=model_markersize * 0.78,
+            linewidth=model_linewidth,
+            markerfacecolor="white",
+            markeredgecolor="#0072B2",
+            zorder=2.8,
+        ),
+        _build_velocity_series(
+            *load_two_column_csv(args.velocity_rodio_abgrall_input),
+            label=RODIO_ABGRALL_LABEL,
+            color="#D55E00",
+            marker="^",
+            linestyle="-.",
+            markersize=model_markersize * 0.78,
+            linewidth=model_linewidth,
+            markerfacecolor="white",
+            markeredgecolor="#D55E00",
+            zorder=2.7,
+        ),
+        _build_velocity_series(
+            *load_two_column_csv(args.velocity_saurel_petitpas_abgrall_input),
+            label=SAUREL_PETITPAS_ABGRALL_LABEL,
+            color="#009E73",
+            marker="v",
+            linestyle=(0, (5.0, 3.0)),
+            markersize=model_markersize * 0.78,
+            linewidth=model_linewidth,
+            markerfacecolor="white",
+            markeredgecolor="#009E73",
+            zorder=2.6,
+        ),
+        _build_velocity_series(
+            *load_two_column_csv(args.velocity_zein_hantke_warnecke_input),
+            label=ZEIN_HANTKE_WARNECKE_LABEL,
+            color="#CC79A7",
+            marker="D",
+            linestyle=(0, (1.0, 2.0)),
+            markersize=model_markersize * 0.68,
+            linewidth=model_linewidth,
+            markerfacecolor="white",
+            markeredgecolor="#CC79A7",
+            zorder=2.5,
         ),
     ]
     figure, _ = build_analysis_figure(
@@ -487,9 +574,9 @@ def _build_velocity_series(
     linewidth: float,
     zorder: float,
     markerfacecolor: str | None = None,
-    markeredgewidth: float = 0.8,
+    markeredgecolor: str | None = None,
 ) -> dict[str, np.ndarray | str]:
-    return {
+    series = {
         "temperature": temperature,
         "uf": uf,
         "label": label,
@@ -499,9 +586,12 @@ def _build_velocity_series(
         "markersize": markersize,
         "linewidth": linewidth,
         "zorder": zorder,
-        "markerfacecolor": color if markerfacecolor is None else markerfacecolor,
-        "markeredgewidth": markeredgewidth,
     }
+    if markerfacecolor is not None:
+        series["markerfacecolor"] = markerfacecolor
+    if markeredgecolor is not None:
+        series["markeredgecolor"] = markeredgecolor
+    return series
 
 
 if __name__ == "__main__":
