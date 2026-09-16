@@ -43,7 +43,7 @@ SERIES_COLORS = {
 SERIES_MARKERS = {
     ("6Eqn", "p"): None,
     ("6Eqn", "pT"): "o",
-    ("5Eqn", "pT"): "s",
+    ("5Eqn", "pT"): "^",
 }
 
 BASE_LINEWIDTH = 2.0
@@ -245,6 +245,9 @@ def build_series_legend_handles(radius_series):
                 linestyle="-",
                 linewidth=PT_LINEWIDTH,
                 marker=get_series_marker(case_label, pressure_type),
+                markerfacecolor="none",
+                markeredgecolor=get_series_color(case_label, pressure_type),
+                markeredgewidth=1.5,
                 markersize=8,
                 label=build_series_type_label(case_label, pressure_type),
             )
@@ -503,6 +506,9 @@ def plot_radius_histories_on_axis(
             color=series["color"],
             linestyle=series["linestyle"],
             marker=series["marker"],
+            markerfacecolor="none",
+            markeredgecolor=series["color"],
+            markeredgewidth=1.5,
             markersize=10,
             markevery=60,
             linewidth=PT_LINEWIDTH,

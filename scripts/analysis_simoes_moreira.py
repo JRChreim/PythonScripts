@@ -62,12 +62,12 @@ FIGURE_LAYOUT_PADS = {
     "hspace": 0.03,
 }
 PLOT_FONT_SIZE = 16
-LEGEND_FONT_SIZE = 13
+LEGEND_FONT_SIZE = 11
 THESIS_DENSITY_LINEWIDTH = 1.2
 THESIS_EXP_MARKERSIZE = 5.5
 THESIS_MODEL_MARKERSIZE = 6.5
 THESIS_MODEL_LINEWIDTH = 0.8
-THESIS_ANNOTATION_FONT_SIZE = 11
+THESIS_ANNOTATION_FONT_SIZE = 8
 EXPERIMENT_LABEL = r"$\mathrm{Experimental}$"
 MODEL_5EQ_LABEL = r"$\mathrm{5\!-\!equation}$"
 MODEL_6EQ_LABEL = r"$\mathrm{6\!-\!equation}$"
@@ -243,13 +243,22 @@ def build_analysis_figure(
     highlight_start: float = DEFAULT_HIGHLIGHT_START,
     highlight_end: float = DEFAULT_HIGHLIGHT_END,
 ):
-    figure, axes = plt.subplots(
-        1,
-        2,
+    legend_height_ratio = 0.22 if thesis_mode else 0.13
+    figure = plt.figure(
         figsize=figure_size,
         constrained_layout=True,
-        gridspec_kw={"width_ratios": WIDTH_RATIOS},
     )
+    grid = figure.add_gridspec(
+        2,
+        2,
+        width_ratios=WIDTH_RATIOS,
+        height_ratios=(legend_height_ratio, 1.0),
+    )
+    legend_axis = figure.add_subplot(grid[0, :])
+    legend_axis.set_axis_off()
+    left_axis = figure.add_subplot(grid[1, 0])
+    right_axis = figure.add_subplot(grid[1, 1])
+    axes = (left_axis, right_axis)
     if thesis_mode:
         layout_pads = {
             key: max(FIGURE_LAYOUT_PADS[key], THESIS_LAYOUT_PADS[key])
@@ -263,9 +272,7 @@ def build_analysis_figure(
             f"Got x_min={x_min:g}, x_max={x_max:g}."
         )
     figure.set_constrained_layout_pads(**layout_pads)
-    left_axis = axes[0]
-    right_axis = axes[1]
-
+    left_axis.set_axisbelow("line")
     left_axis.axvspan(
         highlight_start,
         highlight_end,
@@ -294,6 +301,7 @@ def build_analysis_figure(
         highlight_start,
         highlight_end,
         annotation_font_size=annotation_font_size,
+        compact=thesis_mode,
     )
 
     _plot_velocity_panel(
@@ -302,6 +310,7 @@ def build_analysis_figure(
         label_font_size=label_font_size,
         tick_font_size=tick_font_size,
         legend_font_size=legend_font_size,
+        legend_axis=legend_axis,
     )
 
     return figure, axes
@@ -314,10 +323,12 @@ def _plot_velocity_panel(
     label_font_size: float,
     tick_font_size: float,
     legend_font_size: float,
+    legend_axis,
 ) -> None:
     if not velocity_series:
         raise ValueError("At least one velocity series is required for the second panel.")
 
+    axis.set_axisbelow("line")
     for series in velocity_series:
         axis.plot(
             series["temperature"],
@@ -354,8 +365,20 @@ def _plot_velocity_panel(
     axis.set_ylim(DEFAULT_UF_MIN, DEFAULT_UF_MAX)
     axis.grid(True, which="major", linestyle="-", linewidth=0.45, alpha=0.28)
 
-    legend = axis.legend(
-        loc="upper left",
+    legend_columns = 4
+    handles, labels = axis.get_legend_handles_labels()
+    legend_rows = int(np.ceil(len(handles) / legend_columns))
+    legend_order = [
+        row * legend_columns + column
+        for column in range(legend_columns)
+        for row in range(legend_rows)
+        if row * legend_columns + column < len(handles)
+    ]
+    legend = legend_axis.legend(
+        [handles[index] for index in legend_order],
+        [labels[index] for index in legend_order],
+        loc="center",
+        ncol=legend_columns,
         frameon=True,
         fancybox=False,
         framealpha=1.0,
@@ -364,6 +387,7 @@ def _plot_velocity_panel(
         handlelength=1.3,
         handletextpad=0.45,
         borderpad=0.35,
+        columnspacing=0.9,
     )
     legend.get_frame().set_linewidth(0.8)
 
@@ -376,17 +400,28 @@ def _add_region_annotations(
     highlight_end: float,
     *,
     annotation_font_size: float,
+    compact: bool,
 ) -> None:
     highlight_mid = 0.5 * (highlight_start + highlight_end)
-    before_target_x = float(np.clip(highlight_start, float(np.min(x)), float(np.max(x))))
-    after_target_x = float(np.clip(highlight_end, float(np.min(x)), float(np.max(x))))
+    wave_width = highlight_end - highlight_start
+    boundary_offset = 0.12 * wave_width
+    before_target_x = float(
+        np.clip(highlight_start - boundary_offset, float(np.min(x)), float(np.max(x)))
+    )
+    after_target_x = float(
+        np.clip(highlight_end + boundary_offset, float(np.min(x)), float(np.max(x)))
+    )
     before_target_y = float(np.interp(before_target_x, x, rho))
     after_target_y = float(np.interp(after_target_x, x, rho))
+    before_text_x = highlight_start - 2.7 * wave_width
+    after_text_x = highlight_end + 2.2 * wave_width
+    wave_text_x = highlight_end + 0.7 * wave_width
+    wave_text_y = 25.0 if compact else 35.0
 
     axis.annotate(
-        r"$\mathrm{before\ (b)}$",
+        r"$\mathrm{Before\ (b)}$",
         xy=(before_target_x, before_target_y),
-        xytext=(0.68, 100.0),
+        xytext=(before_text_x, 130.0),
         textcoords="data",
         ha="center",
         va="center",
@@ -399,9 +434,9 @@ def _add_region_annotations(
     axis.annotate(
         "$\\mathrm{Evaporation}$\n$\\mathrm{wave}$",
         xy=(highlight_mid, 2.5),
-        xytext=(0.84, 100.0),
+        xytext=(wave_text_x, wave_text_y),
         textcoords="data",
-        ha="center",
+        ha="left",
         va="center",
         fontsize=annotation_font_size,
         fontfamily="serif",
@@ -410,9 +445,9 @@ def _add_region_annotations(
         zorder=3.0,
     )
     axis.annotate(
-        r"$\mathrm{after\ (a)}$",
+        r"$\mathrm{After\ (a)}$",
         xy=(after_target_x, after_target_y),
-        xytext=(0.83, 0.01),
+        xytext=(after_text_x, 6.0e-4),
         textcoords="data",
         ha="center",
         va="center",
@@ -441,10 +476,8 @@ def main(argv=None):
     label_font_size = THESIS_LABEL_FONT_SIZE if thesis_mode else PLOT_FONT_SIZE
     title_font_size = THESIS_TITLE_FONT_SIZE if thesis_mode else PLOT_FONT_SIZE
     tick_font_size = THESIS_TICK_FONT_SIZE if thesis_mode else PLOT_FONT_SIZE
-    legend_font_size = THESIS_TICK_FONT_SIZE if thesis_mode else LEGEND_FONT_SIZE
-    annotation_font_size = (
-        THESIS_ANNOTATION_FONT_SIZE if thesis_mode else 18
-    )
+    legend_font_size = max(8, THESIS_TICK_FONT_SIZE - 1) if thesis_mode else LEGEND_FONT_SIZE
+    annotation_font_size = THESIS_ANNOTATION_FONT_SIZE if thesis_mode else 13
     exp_markersize = THESIS_EXP_MARKERSIZE if thesis_mode else 7.5
     model_markersize = THESIS_MODEL_MARKERSIZE if thesis_mode else 9.0
     model_linewidth = THESIS_MODEL_LINEWIDTH if thesis_mode else 1.0
