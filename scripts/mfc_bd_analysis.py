@@ -35,6 +35,10 @@ DEFAULT_DATA_FOLDER = Path(
     "/disk/simulations/Relaxation/BubbleCollapse/2D/Sphere/StrongCollapse/pT/6Eqn/Axisymmetric"
 )
 RESOLUTION_ORDER = ("N150E1", "N160E3", "N320E3", "N640E3", "N128E4", "N256E4")
+REFINEMENT_LEVEL_LABELS = {
+    resolution: f"L{index + 1}"
+    for index, resolution in enumerate(RESOLUTION_ORDER)
+}
 SERIES_COLORS = {
     ("6Eqn", "p"): "#0072B2",
     ("6Eqn", "pT"): "#000000",
@@ -103,11 +107,15 @@ def get_series_marker(case_label: str, pressure_type: str):
 
 
 def build_series_label(case_label: str, pressure_type: str, resolution: str) -> str:
-    return rf"$\mathrm{{{case_label}\ {pressure_type}\ {resolution}}}$"
+    return rf"$\mathrm{{{case_label}\ {pressure_type}\ {get_refinement_label(resolution)}}}$"
 
 
 def build_series_type_label(case_label: str, pressure_type: str) -> str:
     return rf"$\mathrm{{{case_label}\ {pressure_type}}}$"
+
+
+def get_refinement_label(resolution: str) -> str:
+    return REFINEMENT_LEVEL_LABELS.get(resolution, resolution)
 
 
 def validate_limits(limits, *, label: str) -> tuple[float, float]:
@@ -200,9 +208,23 @@ def get_resolution_style(resolution: str):
     return FALLBACK_STYLES[fallback_index]
 
 
-def build_resolution_legend_handles(radius_series):
+def build_refinement_legend_handles(
+    radius_series,
+    *,
+    reference_pressure_type: str = "pT",
+):
     seen_resolutions = []
+
     for series in radius_series:
+        if series["pressure_type"] != reference_pressure_type:
+            continue
+        resolution = series["resolution"]
+        if resolution not in seen_resolutions:
+            seen_resolutions.append(resolution)
+
+    for series in radius_series:
+        if series["pressure_type"] == reference_pressure_type:
+            continue
         resolution = series["resolution"]
         if resolution not in seen_resolutions:
             seen_resolutions.append(resolution)
@@ -216,7 +238,7 @@ def build_resolution_legend_handles(radius_series):
                 color="#404040",
                 linestyle=get_resolution_style(resolution)["linestyle"],
                 linewidth=PT_LINEWIDTH,
-                label=resolution,
+                label=get_refinement_label(resolution),
             )
         )
     return handles
@@ -258,13 +280,16 @@ def build_series_legend_handles(radius_series):
 def add_semantic_legends(axis, radius_series, *, thesis_mode: bool):
     legend_fontsize = max(7, THESIS_TICK_FONT_SIZE - 1) if thesis_mode else 8
 
-    resolution_handles = build_resolution_legend_handles(radius_series)
+    refinement_handles = build_refinement_legend_handles(
+        radius_series,
+        reference_pressure_type="pT",
+    )
     series_handles = build_series_legend_handles(radius_series)
 
-    if resolution_handles:
-        resolution_legend = axis.legend(
-            handles=resolution_handles,
-            title=r"$\mathrm{Resolution}$",
+    if refinement_handles:
+        refinement_legend = axis.legend(
+            handles=refinement_handles,
+            title=r"$\mathrm{Refinement\ level}$",
             loc="lower left",
             fontsize=legend_fontsize,
             title_fontsize=legend_fontsize,
@@ -273,7 +298,7 @@ def add_semantic_legends(axis, radius_series, *, thesis_mode: bool):
             handlelength=2.6,
             columnspacing=1.0,
         )
-        axis.add_artist(resolution_legend)
+        axis.add_artist(refinement_legend)
 
     if series_handles:
         axis.legend(
